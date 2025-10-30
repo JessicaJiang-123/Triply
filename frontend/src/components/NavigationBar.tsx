@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Container, Nav, Button, Image } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
 import axiosInstance from '../api/axiosInstance';
@@ -27,7 +27,7 @@ export default function NavigationBar() {
     >
       <Container fluid>
         {/* Left: Logo / Brand */}
-        <Navbar.Brand className="fw-bold text-primary fs-4">
+        <Navbar.Brand as={Link} to="/" className="fw-bold text-primary fs-4">
           Triply
         </Navbar.Brand>
 
