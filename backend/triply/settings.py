@@ -73,6 +73,16 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config.get(
+        "django", "CSRF_TRUSTED_ORIGINS", fallback="http://localhost:5173"
+    ).split(",")
+]
+
 ROOT_URLCONF = "triply.urls"
 
 TEMPLATES = [
@@ -163,9 +173,9 @@ MEDIA_ROOT = BASE_DIR / "images"
 
 # Cookie settings
 SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
 
 # Google OAuth2 settings
 AUTHENTICATION_BACKENDS = (
@@ -179,5 +189,5 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {'prompt': 'select_account'}
 SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['fullname', 'picture']
 
 LOGIN_URL = '/oauth/login/google-oauth2/'
-LOGIN_REDIRECT_URL = "http://localhost:5173"
-LOGOUT_REDIRECT_URL = "http://localhost:5173"
+LOGIN_REDIRECT_URL = "http://localhost:5173/"
+LOGOUT_REDIRECT_URL = "http://localhost:5173/#/login/"
