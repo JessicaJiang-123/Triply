@@ -1,0 +1,93 @@
+/* Minimal styles for the hero modal using Bootstrap + custom glass effect */
+.hero-background {
+  position: fixed;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  z-index: -1;
+}
+.hero-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 0;
+}
+.glass-card {
+  background: rgba(29, 29, 31, 0.55);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  max-width: 560px;
+  width: 92vw;
+  z-index: 1;
+}
+.gradient-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.5;
+  background: linear-gradient(90deg, #646fc6 0%, #2ac7ff 60%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.brand {
+  color: #646fc6; /* purple-tone */
+  font-size: 1.4rem; /* slightly smaller than gradient-title */
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 1.25rem;
+}
+.oauth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center; /* center icon + label */
+  gap: 14px;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background 0.12s ease;
+  text-align: center;
+}
+.oauth-btn:hover,
+.oauth-btn:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.oauth-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+.oauth-btn span {
+  flex: 0 0 auto; /* don't let label flex-grow, keep centered */
+}
+.oauth-btn svg {
+  display: inline-block;
+}
+
+.oauth-btn:focus,
+.oauth-btn:focus-visible {
+  outline: 2px solid rgba(124, 77, 255, 0.35);
+  outline-offset: 3px;
+}
+.btn-gap {
+  margin-top: 0.6rem;
+}
