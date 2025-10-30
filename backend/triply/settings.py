@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "social_django",
+    "api",
 ]
 
 MIDDLEWARE = [
@@ -59,6 +61,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "social_django.middleware.SocialAuthExceptionMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -157,3 +160,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Media files
 MEDIA_ROOT = BASE_DIR / "images"
+
+# Cookie settings
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = False
+
+# Google OAuth2 settings
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config.get("GoogleOAuth2", "client_id")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config.get("GoogleOAuth2", "client_secret")
+SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {'prompt': 'select_account'}
+SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['fullname', 'picture']
+
+LOGIN_URL = '/oauth/login/google-oauth2/'
+LOGIN_REDIRECT_URL = "http://localhost:5173"
+LOGOUT_REDIRECT_URL = "http://localhost:5173"
