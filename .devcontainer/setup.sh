@@ -12,7 +12,7 @@ if [ -f "backend/requirements.txt" ]; then
 
   if [ -f "config.example.ini" ]; then
     echo "Copying config.example.ini -> config.ini (overwrite mode)..."
-    cp config.example.ini config.ini
+    # cp config.example.ini config.ini
   else
     echo "⚠️ No config.example.ini file found — skipping config setup."
   fi
@@ -30,7 +30,7 @@ if [ -f "frontend/package.json" ]; then
 
   if [ -f ".example.env" ]; then
     echo "Copying .example.env -> .env (overwrite mode)..."
-    cp .example.env .env
+    # cp .example.env .env
   else
     echo "⚠️ No .example.env file found — skipping .env setup."
   fi

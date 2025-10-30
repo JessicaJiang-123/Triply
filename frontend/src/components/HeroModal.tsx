@@ -2,12 +2,15 @@ import OAuthButton from './OAuthButton';
 import './HeroModal.css';
 
 export default function HeroModal() {
-  // OAuth endpoints - adjust to your backend
-  const googleHref = `${import.meta.env.VITE_API_BASE_URL || ''}/auth/google/login`;
+  // OAuth endpoints
+  const googleHref = `${import.meta.env.VITE_API_BASE_URL || ''}/oauth/login/google-oauth2/`;
 
   return (
     <div className="hero-wrapper">
-      <div className="hero-background" style={{ backgroundImage: `url('/login_bg.jpg')` }} />
+      <div
+        className="hero-background"
+        style={{ backgroundImage: `url('/login_bg.jpg')` }}
+      />
       <div className="hero-overlay" />
 
       <div className="glass-card text-white">

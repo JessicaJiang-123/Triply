@@ -16,13 +16,10 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.http import JsonResponse
-from django.urls import path
-
-def test_api(request):
-    return JsonResponse({"message": "CORS is working!"})
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("test-api/", test_api),
+    path("oauth/", include("social_django.urls", namespace="social")),
+    path("api/", include("api.urls")),
 ]
