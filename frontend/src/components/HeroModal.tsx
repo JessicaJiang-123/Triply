@@ -7,7 +7,7 @@ export default function HeroModal() {
 
   return (
     <div className="hero-wrapper">
-      <div className="hero-background" style={{ backgroundImage: `url('/vite.svg')` }} />
+      <div className="hero-background" style={{ backgroundImage: `url('/login_bg.jpg')` }} />
       <div className="hero-overlay" />
 
       <div className="glass-card text-white">

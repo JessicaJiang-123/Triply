@@ -1,5 +1,5 @@
-import HeroModal from './components/HeroModal';
+import LoginPage from './pages/LoginPage';
 
 export default function App() {
-  return <HeroModal />;
+  return <LoginPage />;
 }
