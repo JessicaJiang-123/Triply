@@ -27,7 +27,11 @@ export default function NavigationBar() {
     >
       <Container fluid>
         {/* Left: Logo / Brand */}
-        <Navbar.Brand as={Link} to="/" className="fw-bold text-primary fs-4">
+        <Navbar.Brand
+          as={Link}
+          to="/trips"
+          className="fw-bold text-primary fs-4"
+        >
           Triply
         </Navbar.Brand>
 
