@@ -1,8 +1,10 @@
 import { AuthContext } from './context/AuthContext';
 import { useContext, type JSX } from 'react';
-import { HashRouter, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import TravelPlanPage from './pages/TravelPlanPage';
+import AddTripPage from './pages/AddTripPage';
+import AddPlacePage from './pages/AddPlacePage';
 
 export default function App() {
   const { currentUser } = useContext(AuthContext);
@@ -15,10 +17,11 @@ export default function App() {
   };
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/trips" replace />} />
         <Route
-          path="/"
+          path="/trips"
           element={
             <ProtectedRoute>
               <TravelPlanPage />
@@ -26,7 +29,23 @@ export default function App() {
           }
         />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/add-trip"
+          element={
+            <ProtectedRoute>
+              <AddTripPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:trip_id/:date/add-place"
+          element={
+            <ProtectedRoute>
+              <AddPlacePage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
