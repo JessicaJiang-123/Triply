@@ -11,7 +11,7 @@ if [ -f "backend/requirements.txt" ]; then
   pip install -r requirements.txt
 
   if [ -f "config.example.ini" ]; then
-    echo "Copying config.example.ini -> config.ini (overwrite mode)..."
+    echo "Remember to update config.ini based on config.example.ini..."
     # cp config.example.ini config.ini
   else
     echo "⚠️ No config.example.ini file found — skipping config setup."
@@ -29,7 +29,7 @@ if [ -f "frontend/package.json" ]; then
   npm ci || npm install
 
   if [ -f ".example.env" ]; then
-    echo "Copying .example.env -> .env (overwrite mode)..."
+    echo "Remember to update .env based on .example.env..."
     # cp .example.env .env
   else
     echo "⚠️ No .example.env file found — skipping .env setup."
