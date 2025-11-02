@@ -189,5 +189,5 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {'prompt': 'select_account'}
 SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['fullname', 'picture']
 
 LOGIN_URL = '/oauth/login/google-oauth2/'
-LOGIN_REDIRECT_URL = "http://localhost:5173/"
-LOGOUT_REDIRECT_URL = "http://localhost:5173/#/login/"
+LOGIN_REDIRECT_URL = "http://localhost:5173/trips/"
+LOGOUT_REDIRECT_URL = "http://localhost:5173/login/"
