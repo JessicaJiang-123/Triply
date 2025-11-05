@@ -3,20 +3,24 @@ import type { ReactElement } from 'react';
 
 type PlaceCardProps = {
   name: string;
+  id?: number;
   notes?: string;
   start_time?: string;
   end_time?: string;
   image_url?: string;
   order?: number;
+  onDelete?: (id: number) => void;
 };
 
 export default function PlaceCard({
+  id,
   name,
   notes,
   start_time,
   end_time,
   image_url,
   order,
+  onDelete,
 }: PlaceCardProps): ReactElement {
   function fmtTime(t?: string) {
     if (!t) return '--';
@@ -50,6 +54,17 @@ export default function PlaceCard({
                 {fmtTime(start_time)} - {fmtTime(end_time)}
               </div>
             </div>
+            <i className="bi bi-trash"
+              style={{
+                position: 'absolute',
+                bottom: 10,
+                right: 10,
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                if (id && onDelete) onDelete(id);
+              }}
+            ></i>
           </Card.Body>
         </Col>
       </Row>

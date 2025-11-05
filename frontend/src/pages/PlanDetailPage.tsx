@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useParams } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance';
 import NavigationBar from '../components/NavigationBar';
 import { Container, Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
@@ -53,6 +54,32 @@ export default function PlanDetailPage(): ReactElement {
     return d ? d.places : [];
   })();
 
+  async function handleDeletePlace(placeId: number) {
+    if (!id || !selectedDayId) return;
+    try {
+      const res = await axiosInstance.delete(
+        `/api/plans/${id}/days/${selectedDayId}/places/${placeId}/`
+      );
+      const updatedPlaces = res.data;
+      // update trip state: replace places for the selected day only
+      setTrip((t) => {
+        if (!t) return t;
+        const days = t.days.map((d) => {
+          if (d.id === selectedDayId) {
+            return { ...d, places: updatedPlaces };
+          }
+          return d;
+        });
+        return { ...t, days };
+      });
+    } catch (err) {
+      console.error('delete place failed', err);
+  const e = err as { response?: { data?: { detail?: string } }; message?: string };
+  const msg = e?.response?.data?.detail || e?.message || 'Delete failed';
+      setError(msg);
+    }
+  }
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -103,10 +130,10 @@ export default function PlanDetailPage(): ReactElement {
                         setSelectedDay(d.date);
                         setSelectedDayId(d.id);
                       }}
-                      className={`btn btn-link px-3 ${selectedDay === d.date ? 'fw-bold text-dark' : 'text-muted'}`}
-                      style={{ display: 'inline-block' }}
+                      className={`btn px-3 ${selectedDay === d.date ? 'fw-bold text-dark' : 'text-muted'}`}
+                      style={{ display: 'inline-block', fontSize: 16, textDecoration: 'none', paddingTop: 6, paddingBottom: 6 }}
                     >
-                      <div style={{ fontSize: 12 }}>{d.date}</div>
+                      <div style={{ fontSize: 16, lineHeight: 1 }}>{d.date}</div>
                     </button>
                     
                   </div>
@@ -130,6 +157,8 @@ export default function PlanDetailPage(): ReactElement {
                   start_time={p.start_time}
                   end_time={p.end_time}
                   image_url={p.image_url}
+                  id={p.id}
+                  onDelete={handleDeletePlace}
                 />
               ))}
               </div>
