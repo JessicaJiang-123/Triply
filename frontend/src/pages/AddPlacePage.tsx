@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Form,
@@ -16,11 +16,29 @@ import axiosInstance from '../api/axiosInstance';
 import { fetchPlaceImage } from '../utils/fetchPlaceImage';
 
 export default function AddPlacePage() {
-  const { trip_id, date } = useParams<{ trip_id: string; date: string }>();
+  const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
+
+  const [dayDate, setDayDate] = useState<string | null>(null);
+
+  // fetch day date for display
+  useEffect(() => {
+    if (!trip_id || !day_id) return;
+    type ApiTrip = { days?: { id: number; date: string }[] };
+    fetch(`/api/plans/${trip_id}/`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        const dd = data as ApiTrip;
+        const d = dd.days?.find((x) => String(x.id) === String(day_id));
+        if (d) setDayDate(d.date);
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, [trip_id, day_id]);
 
   const [formData, setFormData] = useState({
-    place_name: '',
-    place_address: '',
+    name: '',
+    address: '',
     start_time: '',
     end_time: '',
     notes: '',
@@ -49,16 +67,16 @@ export default function AddPlacePage() {
 
     setFormData((prev) => ({
       ...prev,
-      place_name: name,
-      place_address: address,
+      name: name,
+      address: address,
     }));
   };
 
   const handleMapboxClear = () => {
     setFormData((prev) => ({
       ...prev,
-      place_name: '',
-      place_address: '',
+      name: '',
+      address: '',
     }));
   };
 
@@ -66,7 +84,7 @@ export default function AddPlacePage() {
     e.preventDefault();
 
     // Validate place field
-    if (!formData.place_name.trim()) {
+    if (!formData.name.trim()) {
       setIsPlaceInvalid(true);
       return;
     }
@@ -81,21 +99,21 @@ export default function AddPlacePage() {
 
     try {
       // Fetch place image URL based on place name
-      const imageUrl = await fetchPlaceImage(formData.place_name);
+      const imageUrl = await fetchPlaceImage(formData.name);
       console.log('Fetched image URL:', imageUrl);
 
       const payload = {
         ...formData,
-        date,
         trip: trip_id,
-        imageURL: imageUrl,
+        day: day_id,
+        image_url: imageUrl,
       };
       console.log('Submitting place:', payload);
-      const response = await axiosInstance.post('/api/places/', payload);
+      const response = await axiosInstance.post(`/api/plans/${trip_id}/days/${day_id}/places/`, payload);
       console.log('Place added: ', response.data);
 
-      // Navigate back to the trip's current date view
-      navigate(`/trips/${trip_id}/${date}`);
+  // Navigate back to the trip overview/detail page
+  navigate(`/trips/${trip_id}`);
     } catch (error) {
       console.error('Failed to add place:', error);
       setErrorMsg(
@@ -117,7 +135,7 @@ export default function AddPlacePage() {
           <Card.Body>
             <h2 className="text-center mb-4 text-primary fw-bold d-flex align-items-center justify-content-center">
               <i className="bi bi-geo-alt me-2"></i>
-              Add New Travel Place for {date}
+              Add New Travel Place for {dayDate ?? `Day ${day_id}`}
             </h2>
 
             <Form onSubmit={handleSubmit}>
@@ -132,13 +150,13 @@ export default function AddPlacePage() {
                   }}
                   onRetrieve={handleMapboxSelect}
                   onClear={handleMapboxClear}
-                  value={formData.place_name}
+                  value={formData.name}
                   placeholder="Search for a place..."
                 />
                 <Form.Control
                   type="text"
                   style={{ display: 'none' }}
-                  value={formData.place_name}
+                  value={formData.name}
                   required
                   readOnly
                   isInvalid={isPlaceInvalid}
@@ -147,10 +165,10 @@ export default function AddPlacePage() {
                   Please select a place.
                 </Form.Control.Feedback>
 
-                {formData.place_address && (
+                {formData.address && (
                   <div className="text-muted small mt-2">
                     <i className="bi bi-geo-alt-fill me-1 text-secondary"></i>
-                    {formData.place_address}
+                    {formData.address}
                   </div>
                 )}
               </Form.Group>
@@ -222,7 +240,7 @@ export default function AddPlacePage() {
                   variant="outline-danger"
                   type="button"
                   className="px-4"
-                  onClick={() => navigate(`/trips/${trip_id}/${date}`)}
+                  onClick={() => navigate(`/trips/${trip_id}`)}
                 >
                   Cancel
                 </Button>

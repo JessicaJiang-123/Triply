@@ -1,7 +1,10 @@
 import React from 'react';
 import { Card, Button, Row, Col } from 'react-bootstrap';
 
+import { useNavigate } from 'react-router-dom';
+
 interface TripCardProps {
+  id: number;
   title: string;
   location: string;
   dates: string;
@@ -9,15 +12,13 @@ interface TripCardProps {
   imageUrl: string;
 }
 
-const TripCard: React.FC<TripCardProps> = ({
-  title,
-  location,
-  dates,
-  duration,
-  imageUrl,
-}) => {
+const TripCard: React.FC<TripCardProps> = ({ id, title, location, dates, duration, imageUrl }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => navigate(`/trips/${id}`);
+
   return (
-    <Card className="shadow-sm" style={{ height: '300px' }}>
+    <Card onClick={handleClick} className="shadow-sm" style={{ height: '300px', cursor: 'pointer' }}>
       <Row className="h-100">
         <Col md={6} className="h-100">
           <Card.Img
