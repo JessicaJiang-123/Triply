@@ -29,4 +29,6 @@ export type Trip = {
   end_date: string;
   days: Day[];
   share_uuid: string;
+  image_url?: string;
+  firstDayId?: number;
 };
