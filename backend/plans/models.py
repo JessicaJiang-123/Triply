@@ -37,7 +37,7 @@ class Place(models.Model):
     category = models.CharField(max_length=50, blank=True)
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
-    notes = models.TextField(max_length=200, blank=True)
+    notes = models.CharField(max_length=200, blank=True)
     order = models.PositiveIntegerField()
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
