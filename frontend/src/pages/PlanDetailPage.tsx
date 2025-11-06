@@ -48,8 +48,10 @@ export default function PlanDetailPage(): ReactElement {
   // helper to get places for selected day
   const selectedPlaces: Place[] = (() => {
     if (!trip) return [];
-    const d = trip.days.find((x) => x.date === selectedDay) || trip.days[0];
-    return d ? d.places : [];
+  const d = trip.days.find((x) => x.date === selectedDay) || trip.days[0];
+  if (!d) return [];
+  // return places sorted by order to ensure correct display
+  return [...d.places].sort((a, b) => (a.order || 0) - (b.order || 0));
   })();
 
   async function handleDeletePlace(placeId: number) {

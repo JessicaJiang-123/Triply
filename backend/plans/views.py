@@ -9,6 +9,7 @@ from .models import Day, Place
 from django.db import models as dj_models
 from django.db import transaction
 from django.db.models import F
+from datetime import datetime
 from .serializers import PlaceSerializer
 
 
@@ -54,25 +55,73 @@ class PlaceForDayAPIView(APIView):
 
         data = request.data.copy()
 
-        # compute order for place (append at end)
-        next_order = (day_obj.places.aggregate(dj_models.Max('order'))[  # type: ignore
-                      'order__max'] or 0) + 1  # type: ignore
+        # Try to parse start_time from input; if invalid or missing, we'll append at end
+        start_time_str = data.get('start_time') or None
+        new_start = None
+        if start_time_str:
+            try:
+                # accept HH:MM or HH:MM:SS
+                new_start = datetime.fromisoformat(start_time_str).time()
+            except Exception:
+                try:
+                    new_start = datetime.strptime(
+                        start_time_str, '%H:%M').time()
+                except Exception:
+                    new_start = None
 
-        place = Place(
-            day=day_obj,
-            name=data.get('name', ''),
-            address=data.get('address', ''),
-            start_time=data.get('start_time') or None,
-            end_time=data.get('end_time') or None,
-            notes=data.get('notes', ''),
-            order=next_order,
-            image_url=data.get('image_url', ''),
-            latitude=data.get('latitude') or 0.0,
-            longitude=data.get('longitude') or 0.0,
-            category=data.get('category') or '',
-        )
+        # compute max order for the day
+        max_order = (Place.objects.filter(day=day_obj).aggregate(
+            dj_models.Max('order'))['order__max'] or 0)  # type: ignore
 
-        place.save()
+        if new_start is None:
+            # append at end
+            assign_order = max_order + 1
+            place = Place(
+                day=day_obj,
+                name=data.get('name', ''),
+                address=data.get('address', ''),
+                start_time=data.get('start_time') or None,
+                end_time=data.get('end_time') or None,
+                notes=data.get('notes', ''),
+                order=assign_order,
+                image_url=data.get('image_url', ''),
+                latitude=data.get('latitude') or 0.0,
+                longitude=data.get('longitude') or 0.0,
+                category=data.get('category') or '',
+            )
+            place.save()
+        else:
+            # determine insertion order by comparing to existing places' start_time
+            insertion_order = max_order + 1
+            for p in Place.objects.filter(day=day_obj).order_by('order'):
+                if p.start_time is None:
+                    # places without start_time are treated as after timed places
+                    continue
+                if p.start_time > new_start:
+                    insertion_order = p.order
+                    break
+
+            with transaction.atomic():
+                if insertion_order <= max_order:
+                    # shift later places down by +1
+                    Place.objects.filter(day=day_obj, order__gte=insertion_order).update(
+                        order=F('order') + 1)
+
+                place = Place(
+                    day=day_obj,
+                    name=data.get('name', ''),
+                    address=data.get('address', ''),
+                    start_time=data.get('start_time') or None,
+                    end_time=data.get('end_time') or None,
+                    notes=data.get('notes', ''),
+                    order=insertion_order,
+                    image_url=data.get('image_url', ''),
+                    latitude=data.get('latitude') or 0.0,
+                    longitude=data.get('longitude') or 0.0,
+                    category=data.get('category') or '',
+                )
+
+                place.save()
 
         serializer = PlaceSerializer(place)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
