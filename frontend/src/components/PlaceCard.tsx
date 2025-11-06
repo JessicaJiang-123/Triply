@@ -1,0 +1,133 @@
+import { Card, Row, Col, Button } from 'react-bootstrap';
+import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+type PlaceCardProps = {
+  name: string;
+  address?: string;
+  id?: number;
+  notes?: string;
+  start_time?: string;
+  end_time?: string;
+  image_url?: string;
+  order?: number;
+  onDelete?: (id: number) => void;
+  trip_id?: number;
+  day_id?: number;
+};
+
+export default function PlaceCard({
+  id,
+  name,
+  address,
+  notes,
+  start_time,
+  end_time,
+  image_url,
+  order,
+  onDelete,
+  trip_id,
+  day_id,
+}: PlaceCardProps): ReactElement {
+  const navigate = useNavigate();
+
+  // Format time from "HH:MM:SS" to "HH:MM"
+  function fmtTime(t?: string) {
+    if (!t) return '--';
+    // Accept formats like HH:MM:SS or HH:MM or H:MM
+    const m = t.match(/^(\d{1,2}):(\d{2})(:?\d{2})?$/);
+    if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+    return t;
+  }
+
+  // Shorten address: only keep the first 2 parts
+  const shortAddress = address
+    ? address.split(',').slice(0, 2).join(',').trim()
+    : '';
+
+  return (
+    <Card
+      className="mb-3 border-0 shadow-sm rounded-3"
+      style={{ overflow: 'hidden' }}
+    >
+      <Row className="g-0">
+        {/* Image column: now takes up 4/10 of width */}
+        <Col xs={4}>
+          <Card.Img
+            src={image_url || '/login_bg.jpg'}
+            alt={name}
+            style={{
+              height: 140,
+              width: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </Col>
+
+        {/* Content column: 6/10 width */}
+        <Col xs={8}>
+          <Card.Body className="d-flex flex-column h-100">
+            <div className="d-flex justify-content-between align-items-start mb-2">
+              <Card.Title
+                className="mb-0 fw-bold"
+                style={{ fontSize: 18, lineHeight: 1.3 }}
+              >
+                {order ? `${order}. ` : ''}
+                {name}
+              </Card.Title>
+            </div>
+
+            {/* Address */}
+            {shortAddress && shortAddress !== '' && (
+              <div className="text-secondary small mb-1 d-flex align-items-center">
+                <i className="bi bi-geo-alt-fill me-1 text-muted"></i>
+                <span style={{ lineHeight: 1.4 }}>{shortAddress}</span>
+              </div>
+            )}
+
+            {/* Notes */}
+            {notes && (
+              <div
+                className="text-muted small mb-2"
+                style={{ lineHeight: 1.4 }}
+              >
+                {notes}
+              </div>
+            )}
+
+            {/* Estimated Travel Time */}
+            <div style={{ fontSize: 13 }} className="mb-3">
+              <strong>Estimated Travel Time:</strong>
+              <div>
+                {fmtTime(start_time)} - {fmtTime(end_time)}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mt-auto d-flex justify-content-end gap-2">
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={() =>
+                  navigate(
+                    `/trips/${trip_id}/days/${day_id}/places/${id}/edit-place`
+                  )
+                }
+              >
+                <i className="bi bi-pencil me-1"></i> Edit
+              </Button>
+
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => id && onDelete && onDelete(id)}
+              >
+                <i className="bi bi-trash me-1"></i> Delete
+              </Button>
+            </div>
+          </Card.Body>
+        </Col>
+      </Row>
+    </Card>
+  );
+}
