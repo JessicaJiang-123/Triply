@@ -15,6 +15,7 @@ import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import { fetchPlaceImage } from '../utils/fetchPlaceImage';
+import type { Trip } from '../types/tripTypes';
 
 export default function AddTripPage() {
   const [formData, setFormData] = useState({
@@ -105,19 +106,19 @@ export default function AddTripPage() {
       );
       console.log('Fetched image URL:', imageUrl);
 
-      const payload = { ...formData, imageURL: imageUrl };
+      const payload = { ...formData, image_url: imageUrl };
       console.log('Submitting trip data:', payload);
       const response = await axiosInstance.post('/api/plans/trips/', payload);
       console.log('Trip created:', response.data);
 
-      const newTrip = response.data;
-      
-      const firstDay = newTrip.days && newTrip.days.length > 0 
-                       ? newTrip.days[0] 
-                       : null;
+      const newTrip: Trip = response.data;
 
-      if (firstDay) {
-        navigate(`/trips/${newTrip.id}/days/${firstDay.id}`);
+      const firstDayId = newTrip.firstDayId
+        ? newTrip.firstDayId
+        : newTrip.days?.[0]?.id;
+
+      if (firstDayId) {
+        navigate(`/trips/${newTrip.id}/days/${firstDayId}`);
       } else {
         console.error('New trip data is missing days, navigating to list.');
         navigate('/trips');
