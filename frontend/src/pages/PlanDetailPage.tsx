@@ -67,25 +67,12 @@ export default function PlanDetailPage(): ReactElement {
     fetchPlaces();
   }, [trip_id, day_id]);
 
-  useEffect(() => {
-    if (day_id) {
-      return;
-    }
-    if (!trip) {
-      return;
-    }
-    const firstDay = trip.days.length > 0 ? trip.days[0] : null;
-    if (firstDay) {
-      navigate(`/trips/${trip_id}/days/${firstDay.id}`, { replace: true });
-    } else {
-      console.error('Trip has no days to display.');
-      setError('This trip has no days.');
-    }
-  }, [trip, day_id, trip_id, navigate]);
-
   // Delete place handler
   async function handleDeletePlace(placeId: number) {
     if (!trip_id || !selectedDayId) return;
+    if (!window.confirm('Are you sure you want to delete this place?')) {
+      return;
+    }
     try {
       const res = await axiosInstance.delete(
         `/api/plans/trips/${trip_id}/days/${selectedDayId}/places/${placeId}/`
