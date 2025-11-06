@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Form,
@@ -16,19 +16,68 @@ import axiosInstance from '../api/axiosInstance';
 import { fetchPlaceImage } from '../utils/fetchPlaceImage';
 
 export default function AddPlacePage() {
-  const { trip_id, date } = useParams<{ trip_id: string; date: string }>();
+  const { trip_id, day_id, place_id } = useParams<{
+    trip_id: string;
+    day_id: string;
+    place_id?: string;
+  }>();
+
+  const isEditMode = !!place_id;
+  const [dayDate, setDayDate] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    place_name: '',
-    place_address: '',
+    name: '',
+    address: '',
     start_time: '',
     end_time: '',
     notes: '',
   });
+
+  const [changeCover, setChangeCover] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isPlaceInvalid, setIsPlaceInvalid] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Fetch day date based on day_id
+  useEffect(() => {
+    const fetchDayDate = async () => {
+      try {
+        const response = await axiosInstance.get(
+          `/api/plans/${trip_id}/days/${day_id}/`
+        );
+        setDayDate(response.data.date);
+      } catch (error) {
+        console.error('Error fetching day date:', error);
+      }
+    };
+
+    fetchDayDate();
+  }, [trip_id, day_id]);
+
+  // If in edit mode, fetch existing place details
+  useEffect(() => {
+    if (!isEditMode) return;
+    const fetchPlace = async () => {
+      try {
+        const response = await axiosInstance.get(
+          `/api/plans/${trip_id}/days/${day_id}/places/${place_id}/`
+        );
+        const place = response.data;
+        setFormData({
+          name: place.name || '',
+          address: place.address || '',
+          start_time: place.start_time || '',
+          end_time: place.end_time || '',
+          notes: place.notes || '',
+        });
+      } catch (error) {
+        console.error('Failed to fetch place details:', error);
+        setErrorMsg('Failed to load existing place details.');
+      }
+    };
+    fetchPlace();
+  }, [trip_id, day_id, place_id, isEditMode]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -49,16 +98,16 @@ export default function AddPlacePage() {
 
     setFormData((prev) => ({
       ...prev,
-      place_name: name,
-      place_address: address,
+      name: name,
+      address: address,
     }));
   };
 
   const handleMapboxClear = () => {
     setFormData((prev) => ({
       ...prev,
-      place_name: '',
-      place_address: '',
+      name: '',
+      address: '',
     }));
   };
 
@@ -66,7 +115,7 @@ export default function AddPlacePage() {
     e.preventDefault();
 
     // Validate place field
-    if (!formData.place_name.trim()) {
+    if (!formData.name.trim()) {
       setIsPlaceInvalid(true);
       return;
     }
@@ -80,22 +129,50 @@ export default function AddPlacePage() {
     setSubmitting(true);
 
     try {
-      // Fetch place image URL based on place name
-      const imageUrl = await fetchPlaceImage(formData.place_name);
-      console.log('Fetched image URL:', imageUrl);
+      let imageUrl = '';
 
-      const payload = {
-        ...formData,
-        date,
-        trip: trip_id,
-        imageURL: imageUrl,
-      };
+      // Only fetch a new image if user is adding a new place
+      // or wants to change the cover in edit mode
+      if (!isEditMode || changeCover) {
+        imageUrl = await fetchPlaceImage(formData.name);
+        console.log('Fetched cover image:', imageUrl);
+      }
+
+      let payload = {};
+      if (imageUrl !== '') {
+        payload = {
+          ...formData,
+          trip: trip_id,
+          day: day_id,
+          image_url: imageUrl,
+        };
+      } else {
+        payload = {
+          ...formData,
+          trip: trip_id,
+          day: day_id,
+        };
+      }
       console.log('Submitting place:', payload);
-      const response = await axiosInstance.post('/api/places/', payload);
-      console.log('Place added: ', response.data);
+
+      if (isEditMode) {
+        // Update existing place
+        const response = await axiosInstance.post(
+          `/api/plans/${trip_id}/days/${day_id}/places/${place_id}/`,
+          payload
+        );
+        console.log('Place updated: ', response.data);
+      } else {
+        // Create new place
+        const response = await axiosInstance.post(
+          `/api/plans/${trip_id}/days/${day_id}/places/`,
+          payload
+        );
+        console.log('Place added: ', response.data);
+      }
 
       // Navigate back to the trip's current date view
-      navigate(`/trips/${trip_id}/${date}`);
+      navigate(`/trips/${trip_id}/days/${day_id}`);
     } catch (error) {
       console.error('Failed to add place:', error);
       setErrorMsg(
@@ -117,7 +194,9 @@ export default function AddPlacePage() {
           <Card.Body>
             <h2 className="text-center mb-4 text-primary fw-bold d-flex align-items-center justify-content-center">
               <i className="bi bi-geo-alt me-2"></i>
-              Add New Travel Place for {date}
+              {isEditMode
+                ? `Edit Travel Place for ${dayDate ?? `Day ${day_id}`}`
+                : `Add New Travel Place for ${dayDate ?? `Day ${day_id}`}`}
             </h2>
 
             <Form onSubmit={handleSubmit}>
@@ -132,13 +211,13 @@ export default function AddPlacePage() {
                   }}
                   onRetrieve={handleMapboxSelect}
                   onClear={handleMapboxClear}
-                  value={formData.place_name}
+                  value={formData.name}
                   placeholder="Search for a place..."
                 />
                 <Form.Control
                   type="text"
                   style={{ display: 'none' }}
-                  value={formData.place_name}
+                  value={formData.name}
                   required
                   readOnly
                   isInvalid={isPlaceInvalid}
@@ -147,13 +226,26 @@ export default function AddPlacePage() {
                   Please select a place.
                 </Form.Control.Feedback>
 
-                {formData.place_address && (
+                {formData.address && (
                   <div className="text-muted small mt-2">
                     <i className="bi bi-geo-alt-fill me-1 text-secondary"></i>
-                    {formData.place_address}
+                    {formData.address}
                   </div>
                 )}
               </Form.Group>
+
+              {/* Change Cover Image (edit mode only) */}
+              {isEditMode && (
+                <Form.Group className="mb-4" controlId="changeCoverImage">
+                  <Form.Check
+                    type="switch"
+                    id="change-cover-switch"
+                    label="Change cover image (randomly fetched based on place name)"
+                    checked={changeCover}
+                    onChange={(e) => setChangeCover(e.target.checked)}
+                  />
+                </Form.Group>
+              )}
 
               {/* Start & End time */}
               <Row>
@@ -202,7 +294,11 @@ export default function AddPlacePage() {
                   placeholder="Add any comments about this place..."
                   value={formData.notes}
                   onChange={handleChange}
+                  maxLength={200}
                 />
+                <div className="text-muted small text-end mt-1">
+                  {formData.notes.length}/200 characters
+                </div>
               </Form.Group>
 
               {errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
@@ -215,14 +311,18 @@ export default function AddPlacePage() {
                   disabled={submitting}
                   className="px-4"
                 >
-                  {submitting ? 'Adding...' : 'Add Place'}
+                  {submitting
+                    ? 'Submitting...'
+                    : isEditMode
+                      ? 'Save Changes'
+                      : 'Add Place'}
                 </Button>
 
                 <Button
                   variant="outline-danger"
                   type="button"
                   className="px-4"
-                  onClick={() => navigate(`/trips/${trip_id}/${date}`)}
+                  onClick={() => navigate(`/trips/${trip_id}/days/${day_id}`)}
                 >
                   Cancel
                 </Button>
