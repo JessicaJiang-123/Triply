@@ -11,6 +11,7 @@ The project specification and sprint planning are documented in: [f25_team_1 Kan
 
 - Django: REST API server for backend logic and data management
 - django-cors-headers: Enables secure cross-origin requests between frontend and backend
+- djangorestframework: Provides tools for building RESTful APIs, including serializers, authentication, permissions, and viewsets
 - social-auth-app-django: Handles Google OAuth2 authentication and user login integration
 
 ### Frontend
