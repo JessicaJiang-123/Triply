@@ -44,7 +44,6 @@ class DaySerializer(serializers.ModelSerializer):
 class TripSerializer(serializers.ModelSerializer):
     days = DaySerializer(many=True, read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    imageURL = serializers.URLField(source='image_url', required=False, allow_blank=True)
     firstDayId = serializers.SerializerMethodField()
 
     class Meta:
@@ -59,7 +58,7 @@ class TripSerializer(serializers.ModelSerializer):
             "created_at",
             "share_uuid",
             "days",
-            "imageURL",
+            "image_url",
             "firstDayId",
         ]
 
