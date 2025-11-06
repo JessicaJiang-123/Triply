@@ -31,9 +31,6 @@ export default function AddPlacePage() {
     start_time: '',
     end_time: '',
     notes: '',
-    latitude: 0.0,
-    longitude: 0.0,
-    category: '',
   });
 
   const [changeCover, setChangeCover] = useState(false);
@@ -73,9 +70,6 @@ export default function AddPlacePage() {
           start_time: place.start_time || '',
           end_time: place.end_time || '',
           notes: place.notes || '',
-          latitude: place.latitude || 0.0,
-          longitude: place.longitude || 0.0,
-          category: place.category || '',
         });
       } catch (error) {
         console.error('Failed to fetch place details:', error);
@@ -101,16 +95,11 @@ export default function AddPlacePage() {
 
     const name = feature.properties?.name || '';
     const address = feature.properties?.full_address || '';
-    const [longitude, latitude] = feature.geometry.coordinates;
-    const category = feature.properties?.category || '';
 
     setFormData((prev) => ({
       ...prev,
       name: name,
       address: address,
-      latitude: latitude,
-      longitude: longitude,
-      category: category,
     }));
   };
 
@@ -119,9 +108,6 @@ export default function AddPlacePage() {
       ...prev,
       name: '',
       address: '',
-      latitude: 0.0,
-      longitude: 0.0,
-      category: '',
     }));
   };
 
