@@ -107,11 +107,21 @@ export default function AddTripPage() {
 
       const payload = { ...formData, imageURL: imageUrl };
       console.log('Submitting trip data:', payload);
-      const response = await axiosInstance.post('/api/trips/', payload);
+      const response = await axiosInstance.post('/api/plans/trips/', payload);
       console.log('Trip created:', response.data);
 
-      // Redirect to trip details or main list
-      navigate('/trips');
+      const newTrip = response.data;
+      
+      const firstDay = newTrip.days && newTrip.days.length > 0 
+                       ? newTrip.days[0] 
+                       : null;
+
+      if (firstDay) {
+        navigate(`/trips/${newTrip.id}/days/${firstDay.id}`);
+      } else {
+        console.error('New trip data is missing days, navigating to list.');
+        navigate('/trips');
+      }
     } catch (error) {
       console.error('Failed to create trip:', error);
       setErrorMsg(

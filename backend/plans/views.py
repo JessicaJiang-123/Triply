@@ -1,22 +1,60 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, permissions
-from .models import Trip
-from .serializers import DaySerializer, TripSerializer
+from rest_framework import viewsets, generics, permissions, status
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Day, Place
 from django.db import models as dj_models
 from django.db import transaction
 from django.db.models import F
-from datetime import datetime
-from .serializers import PlaceSerializer
+from datetime import datetime, timedelta
+from rest_framework.decorators import action
+from .models import Trip, Day, Place
+from .serializers import DaySerializer, TripSerializer, PlaceSerializer
 
 # Owner-only retrieve view
 class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         # Write permissions are only allowed to the owner of the trip.
-        return obj.user == request.user
+        if hasattr(obj, 'user'):
+            return obj.user == request.user
+        if hasattr(obj, 'trip'):
+            return obj.trip.user == request.user
+        if hasattr(obj, 'day'):
+            return obj.day.trip.user == request.user
+        return False
+
+class TripViewSet(viewsets.ModelViewSet):
+    """
+    A ViewSet for viewing and editing the user's trips.
+    """
+    serializer_class = TripSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the trips
+        for the currently authenticated user.
+        """
+        return Trip.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        trip = serializer.save(user=self.request.user)
+        current_date = trip.start_date
+        order = 1
+        while current_date <= trip.end_date:
+            Day.objects.create(
+                trip=trip,
+                date=current_date,
+                order=order
+            )
+            current_date += timedelta(days=1)
+            order += 1
+
+    @action(detail=True, methods=['post'], url_path='share')
+    def share_trip(self, request, pk=None):
+        trip = self.get_object()
+        
+        return Response({'message': 'Sharing endpoint not implemented yet.'}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
 class PlanDetailAPIView(generics.RetrieveAPIView):
@@ -29,7 +67,7 @@ class PlanShareAPIView(generics.RetrieveAPIView):
     lookup_field = "share_uuid"
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
 
 class DayForTripAPIView(APIView):
@@ -115,23 +153,19 @@ class PlaceForDayAPIView(APIView):
                     Place.objects.filter(day=day_obj, order__gte=insertion_order).update(
                         order=F('order') + 1)
             assign_order = insertion_order
+        
+        serializer = PlaceSerializer(data=data)
+        if not serializer.is_valid():
+             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        place = Place.objects.create(
-            day=day_obj,
-            name=data.get('name', ''),
-            address=data.get('address', ''),
-            start_time=data.get('start_time') or None,
-            end_time=data.get('end_time') or None,
-            notes=data.get('notes', ''),
-            order=assign_order,
-            image_url=data.get('image_url', ''),
-            latitude=data.get('latitude') or 0.0,
-            longitude=data.get('longitude') or 0.0,
-            category=data.get('category') or '',
-        )
+        with transaction.atomic():
+            if assign_order <= max_order:
+                Place.objects.filter(day=day_obj, order__gte=assign_order).update(
+                    order=F('order') + 1)
+            
+            place = serializer.save(day=day_obj, order=assign_order)
 
-        serializer = PlaceSerializer(place)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(PlaceSerializer(place).data, status=status.HTTP_201_CREATED)
     
     def _update_place(self, request, trip, day_obj, place_id):
         place = get_object_or_404(Place, pk=place_id, day=day_obj)

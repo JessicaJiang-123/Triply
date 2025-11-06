@@ -1,15 +1,15 @@
 import React from 'react';
 import { Card, Button, Row, Col } from 'react-bootstrap';
 
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 interface TripCardProps {
   id: number;
   title: string;
   location: string;
   dates: string;
-  duration: string;
   imageUrl: string;
+  onDelete: (id: number) => void;
 }
 
 const TripCard: React.FC<TripCardProps> = ({
@@ -17,17 +17,22 @@ const TripCard: React.FC<TripCardProps> = ({
   title,
   location,
   dates,
-  duration,
   imageUrl,
+  onDelete,
 }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // TODO: update navigation url to /trips/${trip_id}/days/${dayId}
-  const handleClick = () => navigate(`/trips/${id}`);
+  // const handleClick = () => navigate(`/trips/${id}`);
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete(id);
+  };
 
   return (
     <Card
-      onClick={handleClick}
       className="shadow-sm"
       style={{ height: '300px', cursor: 'pointer' }}
     >
@@ -48,9 +53,8 @@ const TripCard: React.FC<TripCardProps> = ({
             </Card.Title>
             <Card.Text className="fs-5 mb-2">{location}</Card.Text>
             <Card.Text className="text-muted fs-6 mb-2">{dates}</Card.Text>
-            <Card.Text className="text-muted fs-6 mb-2">{duration}</Card.Text>
             <div className="mt-auto text-end">
-              <Button variant="outline-danger" size="sm">
+              <Button variant="outline-danger" size="sm" onClick={handleDeleteClick}>
                 <i className="bi bi-trash me-1"></i> Delete
               </Button>
             </div>
