@@ -11,8 +11,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         user, created = User.objects.get_or_create(
-            username='demo_user',
-            defaults={'email': 'demo@example.com'}
+            username='Jiening Yang',
+            defaults={'email': 'jieningy@andrew.cmu.edu'}
         )
         if created:
             user.set_unusable_password()

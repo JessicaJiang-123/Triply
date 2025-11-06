@@ -32,7 +32,7 @@ export default function PlaceCard({
   return (
     <Card className="mb-3 border-0" style={{ boxShadow: 'none' }}>
       <Row className="g-0">
-        <Col xs={5}>
+        <Col xs={3}>
           <Card.Img
             src={image_url || ''}
             alt={name}

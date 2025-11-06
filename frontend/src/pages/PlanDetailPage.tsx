@@ -35,8 +35,6 @@ type Trip = {
   days: Day[];
 };
 
-// (If you want local mock data, use src/mocks/mockPlaces.ts)
-
 
 export default function PlanDetailPage(): ReactElement {
   const { id } = useParams();
