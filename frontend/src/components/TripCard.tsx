@@ -1,7 +1,10 @@
 import React from 'react';
 import { Card, Button, Row, Col } from 'react-bootstrap';
 
+import { useNavigate } from 'react-router-dom';
+
 interface TripCardProps {
+  id: number;
   title: string;
   location: string;
   dates: string;
@@ -10,14 +13,24 @@ interface TripCardProps {
 }
 
 const TripCard: React.FC<TripCardProps> = ({
+  id,
   title,
   location,
   dates,
   duration,
   imageUrl,
 }) => {
+  const navigate = useNavigate();
+
+  // TODO: update navigation url to /trips/${trip_id}/days/${dayId}
+  const handleClick = () => navigate(`/trips/${id}`);
+
   return (
-    <Card className="shadow-sm" style={{ height: '300px' }}>
+    <Card
+      onClick={handleClick}
+      className="shadow-sm"
+      style={{ height: '300px', cursor: 'pointer' }}
+    >
       <Row className="h-100">
         <Col md={6} className="h-100">
           <Card.Img
@@ -38,7 +51,7 @@ const TripCard: React.FC<TripCardProps> = ({
             <Card.Text className="text-muted fs-6 mb-2">{duration}</Card.Text>
             <div className="mt-auto text-end">
               <Button variant="outline-danger" size="sm">
-                🗑️ Delete
+                <i className="bi bi-trash me-1"></i> Delete
               </Button>
             </div>
           </Card.Body>
