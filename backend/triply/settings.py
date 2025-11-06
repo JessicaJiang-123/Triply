@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "social_django",
     "api",
+    "plans",
 ]
 
 MIDDLEWARE = [
@@ -106,7 +107,8 @@ WSGI_APPLICATION = "triply.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-db_engine = config.get("database", "ENGINE", fallback="django.db.backends.sqlite3")
+db_engine = config.get("database", "ENGINE",
+                       fallback="django.db.backends.sqlite3")
 
 if db_engine.endswith("sqlite3"):
     DATABASES = {
