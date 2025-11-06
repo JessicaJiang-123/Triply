@@ -1,9 +1,7 @@
 {
   "name": "Triply Dev Environment",
   "runArgs": [
-    "--name", "triply_dev",
-    "-v", "${env:SSH_AUTH_SOCK}:/ssh-agent",
-    "-e", "SSH_AUTH_SOCK=/ssh-agent"
+    "--name", "triply_dev"
   ],
   "build": { "dockerfile": "Dockerfile" },
   "forwardPorts": [8000, 5173],
@@ -27,9 +25,5 @@
         "editor.formatOnSave": true
       }
     }
-  },
-  "mounts": [
-    "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
-  ]
+  }
 }
