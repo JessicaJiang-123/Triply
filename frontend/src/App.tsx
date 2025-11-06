@@ -29,11 +29,20 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/login" element={<LoginPage />} />
         <Route
           path="/trips/:trip_id/days/:day_id"
           element={
             <ProtectedRoute>
               <PlanDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trips/:trip_id/days/:day_id/add-place"
+          element={
+            <ProtectedRoute>
+              <AddPlacePage />
             </ProtectedRoute>
           }
         />
@@ -45,20 +54,11 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/login" element={<LoginPage />} />
         <Route
           path="/add-trip"
           element={
             <ProtectedRoute>
               <AddTripPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trips/:trip_id/days/:day_id/add-place"
-          element={
-            <ProtectedRoute>
-              <AddPlacePage />
             </ProtectedRoute>
           }
         />
