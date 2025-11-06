@@ -10,6 +10,7 @@ class Trip(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    image_url = models.URLField(max_length=1024, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.user})"
@@ -33,13 +34,14 @@ class Day(models.Model):
 class Place(models.Model):
     day = models.ForeignKey(Day, on_delete=models.CASCADE, related_name='places')
     name = models.CharField(max_length=200)
-    category = models.CharField(max_length=50)
+    category = models.CharField(max_length=50, blank=True)
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     notes = models.TextField(max_length=200, blank=True)
     order = models.PositiveIntegerField()
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    description = models.TextField(blank=True)
     image_url = models.URLField(max_length=1024, blank=True)
     address = models.CharField(max_length=512, blank=True)
 

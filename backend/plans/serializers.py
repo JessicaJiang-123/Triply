@@ -13,6 +13,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         model = Place
         fields = [
             "id",
+            "day",
             "name",
             "category",
             "start_time",
@@ -22,8 +23,14 @@ class PlaceSerializer(serializers.ModelSerializer):
             "order",
             "latitude",
             "longitude",
+            "description",
             "image_url",
         ]
+        read_only_fields = ['day']
+
+        extra_kwargs = {
+            'order': {'required': False}
+        }
 
 
 class DaySerializer(serializers.ModelSerializer):
@@ -36,11 +43,15 @@ class DaySerializer(serializers.ModelSerializer):
 
 class TripSerializer(serializers.ModelSerializer):
     days = DaySerializer(many=True, read_only=True)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    imageURL = serializers.URLField(source='image_url', required=False, allow_blank=True)
+    firstDayId = serializers.SerializerMethodField()
 
     class Meta:
         model = Trip
         fields = [
             "id",
+            "user",
             "name",
             "destination_city",
             "start_date",
@@ -48,4 +59,10 @@ class TripSerializer(serializers.ModelSerializer):
             "created_at",
             "share_uuid",
             "days",
+            "imageURL",
+            "firstDayId",
         ]
+
+    def get_firstDayId(self, obj):
+        first_day = obj.days.order_by('order').first()
+        return first_day.id if first_day else None

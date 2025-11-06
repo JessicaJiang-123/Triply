@@ -31,6 +31,9 @@ export default function AddPlacePage() {
     start_time: '',
     end_time: '',
     notes: '',
+    latitude: 0.0,
+    longitude: 0.0,
+    category: '',
   });
 
   const [changeCover, setChangeCover] = useState(false);
@@ -44,7 +47,7 @@ export default function AddPlacePage() {
     const fetchDayDate = async () => {
       try {
         const response = await axiosInstance.get(
-          `/api/plans/${trip_id}/days/${day_id}/`
+          `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
         setDayDate(response.data.date);
       } catch (error) {
@@ -61,7 +64,7 @@ export default function AddPlacePage() {
     const fetchPlace = async () => {
       try {
         const response = await axiosInstance.get(
-          `/api/plans/${trip_id}/days/${day_id}/places/${place_id}/`
+          `/api/plans/trips/${trip_id}/days/${day_id}/places/${place_id}/`
         );
         const place = response.data;
         setFormData({
@@ -70,6 +73,9 @@ export default function AddPlacePage() {
           start_time: place.start_time || '',
           end_time: place.end_time || '',
           notes: place.notes || '',
+          latitude: place.latitude || 0.0,
+          longitude: place.longitude || 0.0,
+          category: place.category || '',
         });
       } catch (error) {
         console.error('Failed to fetch place details:', error);
@@ -95,11 +101,16 @@ export default function AddPlacePage() {
 
     const name = feature.properties?.name || '';
     const address = feature.properties?.full_address || '';
+    const [longitude, latitude] = feature.geometry.coordinates;
+    const category = feature.properties?.category || '';
 
     setFormData((prev) => ({
       ...prev,
       name: name,
       address: address,
+      latitude: latitude,
+      longitude: longitude,
+      category: category,
     }));
   };
 
@@ -108,6 +119,9 @@ export default function AddPlacePage() {
       ...prev,
       name: '',
       address: '',
+      latitude: 0.0,
+      longitude: 0.0,
+      category: '',
     }));
   };
 
@@ -158,14 +172,14 @@ export default function AddPlacePage() {
       if (isEditMode) {
         // Update existing place
         const response = await axiosInstance.post(
-          `/api/plans/${trip_id}/days/${day_id}/places/${place_id}/`,
+          `/api/plans/trips/${trip_id}/days/${day_id}/places/${place_id}/`,
           payload
         );
         console.log('Place updated: ', response.data);
       } else {
         // Create new place
         const response = await axiosInstance.post(
-          `/api/plans/${trip_id}/days/${day_id}/places/`,
+          `/api/plans/trips/${trip_id}/days/${day_id}/places/`,
           payload
         );
         console.log('Place added: ', response.data);

@@ -23,7 +23,7 @@ export default function PlanDetailPage(): ReactElement {
     const fetchTrip = async () => {
       if (!trip_id) return;
       try {
-        const res = await axiosInstance.get(`/api/plans/${trip_id}/`);
+        const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
         console.log('Fetched trip', res.data);
         setTrip(res.data);
       } catch (err) {
@@ -46,7 +46,7 @@ export default function PlanDetailPage(): ReactElement {
       if (!trip_id || !day_id) return;
       try {
         const res = await axiosInstance.get(
-          `/api/plans/${trip_id}/days/${day_id}/`
+          `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
         console.log('Fetched places for day', res.data);
         setPlaces(res.data.places || []);
@@ -67,12 +67,28 @@ export default function PlanDetailPage(): ReactElement {
     fetchPlaces();
   }, [trip_id, day_id]);
 
+  useEffect(() => {
+    if (day_id) {
+      return;
+    }
+    if (!trip) {
+      return;
+    }
+    const firstDay = trip.days.length > 0 ? trip.days[0] : null;
+    if (firstDay) {
+      navigate(`/trips/${trip_id}/days/${firstDay.id}`, { replace: true });
+    } else {
+      console.error('Trip has no days to display.');
+      setError('This trip has no days.');
+    }
+  }, [trip, day_id, trip_id, navigate]);
+
   // Delete place handler
   async function handleDeletePlace(placeId: number) {
     if (!trip_id || !selectedDayId) return;
     try {
       const res = await axiosInstance.delete(
-        `/api/plans/${trip_id}/days/${selectedDayId}/places/${placeId}/`
+        `/api/plans/trips/${trip_id}/days/${selectedDayId}/places/${placeId}/`
       );
       const updatedPlaces: Place[] = res.data;
       setPlaces(updatedPlaces);
