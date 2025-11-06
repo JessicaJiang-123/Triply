@@ -1,8 +1,7 @@
 {
   "name": "Triply Dev Environment",
   "runArgs": [
-    "--name", "triply_dev",
-
+    "--name", "triply_dev"
   ],
   "build": { "dockerfile": "Dockerfile" },
   "forwardPorts": [8000, 5173],

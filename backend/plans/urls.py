@@ -6,9 +6,13 @@ urlpatterns = [
     path("share/<uuid:share_uuid>/",
          views.PlanShareAPIView.as_view(), name="plan-share"),
 
-    # Create place for a day (POST) and delete a place (DELETE with place_id)
+    # Get a specific day for a trip
+    path("<int:trip_id>/days/<int:day_id>/",
+         views.DayForTripAPIView.as_view(), name="day-detail"),
+    # Create a place for a day
     path("<int:trip_id>/days/<int:day_id>/places/",
          views.PlaceForDayAPIView.as_view(), name="place-create"),
+    # Get or Update or Delete a specific place for a day
     path("<int:trip_id>/days/<int:day_id>/places/<int:place_id>/",
-         views.PlaceForDayAPIView.as_view(), name="place-delete"),
+         views.PlaceForDayAPIView.as_view(), name="place-detail"),
 ]

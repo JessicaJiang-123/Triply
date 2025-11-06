@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Trip, Day, Place, RouteSegment
 
-
 class RouteSegmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RouteSegment
@@ -42,7 +41,6 @@ class TripSerializer(serializers.ModelSerializer):
         model = Trip
         fields = [
             "id",
-            "user",
             "name",
             "destination_city",
             "start_date",

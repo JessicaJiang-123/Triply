@@ -42,7 +42,7 @@ const TravelPlanPage: React.FC = () => {
 
   return (
     <>
-      <NavigationBar />
+      <NavigationBar title="Travel Plan" />
       <Container>
         <h1 className="mb-5">Travel Plan Page</h1>
 
