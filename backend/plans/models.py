@@ -2,14 +2,17 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
+
 class Trip(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trips')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='trips')
     name = models.CharField(max_length=100)
     destination_city = models.CharField(max_length=100)
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
-    share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    share_uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False)
     image_url = models.URLField(max_length=1024, blank=True, null=True)
 
     def __str__(self):
@@ -17,7 +20,8 @@ class Trip(models.Model):
 
 
 class Day(models.Model):
-    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='days')
+    trip = models.ForeignKey(
+        Trip, on_delete=models.CASCADE, related_name='days')
     date = models.DateField()
     order = models.PositiveIntegerField()
 
@@ -32,7 +36,8 @@ class Day(models.Model):
 
 
 class Place(models.Model):
-    day = models.ForeignKey(Day, on_delete=models.CASCADE, related_name='places')
+    day = models.ForeignKey(
+        Day, on_delete=models.CASCADE, related_name='places')
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=50, blank=True)
     start_time = models.TimeField(null=True, blank=True)
@@ -57,7 +62,62 @@ class Place(models.Model):
 
 
 class RouteSegment(models.Model):
-    from_place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='segment_from')
-    to_place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='segment_to')
+    from_place = models.ForeignKey(
+        Place, on_delete=models.CASCADE, related_name='segment_from')
+    to_place = models.ForeignKey(
+        Place, on_delete=models.CASCADE, related_name='segment_to')
     distance_km = models.FloatField()
     travel_time_min = models.FloatField()
+
+
+class PlaceComment(models.Model):
+    """User comments for a Place."""
+    place = models.ForeignKey(
+        Place, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='place_comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    # If a comment can have images, we store them in a separate CommentImage model below.
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.place}"
+
+
+class PlaceImage(models.Model):
+    """Images associated with a Place. Using URLField to avoid requiring MEDIA setup.
+    If you prefer storing uploads on the server, change to ImageField and configure MEDIA settings.
+    """
+    place = models.ForeignKey(
+        Place, on_delete=models.CASCADE, related_name='images')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,
+                             null=True, blank=True, related_name='place_images')
+    image_url = models.URLField(max_length=1024)
+    caption = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Image for {self.place} ({self.image_url})"
+
+
+class CommentImage(models.Model):
+    """Images attached to a PlaceComment. One comment can have many images."""
+    comment = models.ForeignKey(
+        'PlaceComment', on_delete=models.CASCADE, related_name='images')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,
+                             null=True, blank=True, related_name='comment_images')
+    image_url = models.URLField(max_length=1024)
+    caption = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Image for comment {self.comment.id} ({self.image_url})"

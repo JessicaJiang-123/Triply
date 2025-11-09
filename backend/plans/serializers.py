@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Trip, Day, Place, RouteSegment
+from .models import Trip, Day, Place, RouteSegment, PlaceComment, CommentImage
+
 
 class RouteSegmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,3 +66,29 @@ class TripSerializer(serializers.ModelSerializer):
     def get_firstDayId(self, obj):
         first_day = obj.days.order_by('order').first()
         return first_day.id if first_day else None
+
+
+class PlaceCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlaceComment
+        fields = [
+            "id",
+            "place",
+            "user",
+            "text",
+            "created_at",
+        ]
+        read_only_fields = ['place', 'user', 'created_at']
+
+
+class CommentImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommentImage
+        fields = [
+            "id",
+            "comment",
+            "user",
+            "image_url",
+            "created_at",
+        ]
+        read_only_fields = ['comment', 'user', 'created_at']
