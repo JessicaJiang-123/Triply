@@ -68,19 +68,6 @@ class TripSerializer(serializers.ModelSerializer):
         return first_day.id if first_day else None
 
 
-class PlaceCommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PlaceComment
-        fields = [
-            "id",
-            "place",
-            "user",
-            "text",
-            "created_at",
-        ]
-        read_only_fields = ['place', 'user', 'created_at']
-
-
 class CommentImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommentImage
@@ -92,3 +79,35 @@ class CommentImageSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ['comment', 'user', 'created_at']
+
+
+class PlaceCommentSerializer(serializers.ModelSerializer):
+    images = CommentImageSerializer(many=True, read_only=True)
+    image_urls = serializers.ListField(
+        child=serializers.URLField(), write_only=True, required=False)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = PlaceComment
+        fields = [
+            "id",
+            "place",
+            "user",
+            "text",
+            "created_at",
+            "images",
+            "image_urls",
+        ]
+        read_only_fields = ['place', 'user', 'created_at']
+
+    def create(self, validated_data):
+        image_urls = validated_data.pop('image_urls', [])
+        if len(image_urls) > 5:
+            raise serializers.ValidationError(
+                "You can upload a maximum of 5 images per comment.")
+        # place and user should be set by view or context
+        comment = PlaceComment.objects.create(**validated_data)
+        for url in image_urls:
+            CommentImage.objects.create(
+                comment=comment, image_url=url, user=comment.user)
+        return comment
