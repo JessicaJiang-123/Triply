@@ -14,6 +14,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import NavigationBar from '../components/NavigationBar';
 import axiosInstance from '../api/axiosInstance';
 import { fetchPlaceImage } from '../utils/fetchPlaceImage';
+import { getCoordinatesFromAddress } from '../utils/getCoordinatesFromAddress';
 
 export default function AddPlacePage() {
   const { trip_id, day_id, place_id } = useParams<{
@@ -138,21 +139,27 @@ export default function AddPlacePage() {
         console.log('Fetched cover image:', imageUrl);
       }
 
-      let payload = {};
-      if (imageUrl !== '') {
-        payload = {
-          ...formData,
-          trip: trip_id,
-          day: day_id,
-          image_url: imageUrl,
-        };
-      } else {
-        payload = {
-          ...formData,
-          trip: trip_id,
-          day: day_id,
-        };
+      // Convert address to coordinates
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      try {
+        if (formData.address) {
+          const coordinates = await getCoordinatesFromAddress(formData.address);
+          latitude = coordinates[1];
+          longitude = coordinates[0];
+        }
+      } catch (error) {
+        console.error('Error converting address to coordinates:', error);
       }
+
+      const payload = {
+        ...formData,
+        trip: trip_id,
+        day: day_id,
+        ...(imageUrl && { image_url: imageUrl }),
+        ...(latitude !== null && { latitude: latitude }),
+        ...(longitude !== null && { longitude: longitude }),
+      };
       console.log('Submitting place:', payload);
 
       if (isEditMode) {
