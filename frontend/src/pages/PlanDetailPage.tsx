@@ -7,6 +7,9 @@ import { Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
 import { useRef } from 'react';
 import type { Place, Trip } from '../types/tripTypes';
+import { fetchPlaceImage } from '../utils/fetchPlaceImage';
+
+const DEFAULT_PLACE_IMAGE = '/login_bg.jpg'; // Path to default place image
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
@@ -16,6 +19,7 @@ export default function PlanDetailPage(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const dateRowRef = useRef<HTMLDivElement | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
+  const isFetchingImages = useRef(false);
   const navigate = useNavigate();
 
   // fetch trip details to populate date bar
@@ -66,6 +70,73 @@ export default function PlanDetailPage(): ReactElement {
     };
     fetchPlaces();
   }, [trip_id, day_id]);
+
+  // Fetch and update trip image if missing (for AI generated trips)
+  useEffect(() => {
+    if (trip && !trip.image_url) {
+      
+      const fetchAndUpdateTripImage = async () => {
+        try {
+          const newImageUrl = await fetchPlaceImage(
+            trip.destination_city.split(',')[0]
+          );
+
+          setTrip((prevTrip) =>
+            prevTrip ? { ...prevTrip, image_url: newImageUrl } : null
+          );
+
+          await axiosInstance.patch(
+            `/api/plans/trips/${trip_id}/`, //
+            { image_url: newImageUrl }
+          );
+
+        } catch (err) {
+          console.error(`Failed to fetch image for Trip ${trip_id}:`, err);
+        }
+      };
+
+      fetchAndUpdateTripImage();
+    }
+  }, [trip, trip_id]);
+
+  // Fetch and update place images if missing (for AI generated places)
+  useEffect(() => {
+    if (isFetchingImages.current) return;
+    
+    const placesToUpdate = places.filter((p) => !p.image_url);
+
+    if (placesToUpdate.length === 0) return;
+
+    const fetchAndUpdatePlaceImages = async () => {
+      isFetchingImages.current = true; 
+      const updatedPlacePromises = placesToUpdate.map(async (place) => {
+        try {
+          const newImageUrl = await fetchPlaceImage(place.name);
+          await axiosInstance.post(
+            `/api/plans/trips/${trip_id}/days/${day_id}/places/${place.id}/`,
+            { image_url: newImageUrl }
+          );
+          return { ...place, image_url: newImageUrl };
+
+        } catch (err) {
+          console.error(`Failed to fetch image for ${place.name}:`, err);
+          return place;
+        }
+      });
+
+      const updatedPlaces = await Promise.all(updatedPlacePromises);
+
+      setPlaces((currentPlaces) =>
+        currentPlaces.map(
+          (p) => updatedPlaces.find((up) => up.id === p.id) || p
+        )
+      );
+
+      isFetchingImages.current = false;
+    };
+
+    fetchAndUpdatePlaceImages();
+  }, [places, trip_id, day_id]);
 
   // Delete place handler
   async function handleDeletePlace(placeId: number) {
@@ -199,6 +270,7 @@ export default function PlanDetailPage(): ReactElement {
               paddingBottom: '80px', // space for add button
             }}
           >
+            {/* add default image for places and trips */}
             {places.length > 0 ? (
               places.map((p) => (
                 <PlaceCard
@@ -209,7 +281,7 @@ export default function PlanDetailPage(): ReactElement {
                   notes={p.notes}
                   start_time={p.start_time}
                   end_time={p.end_time}
-                  image_url={p.image_url}
+                  image_url={p.image_url || DEFAULT_PLACE_IMAGE}
                   id={p.id}
                   onDelete={handleDeletePlace}
                   trip_id={trip.id}
