@@ -38,7 +38,6 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days):
     # construct the prompt
     prompt_contents = f"""
     You are a travel planning expert.
-    You need to create a logical, step-by-step route for each day and group attractions that are geographically close to each other.
     A user is planning a trip with the title: "{trip_name}".
     
     Based on the following request, generate a travel plan for {city} spanning {num_days} day(s).
@@ -53,10 +52,8 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days):
         "day": 1,
         "places": [
           {{
-            "name": "Name of the place OR activity",
-            "address": "The full street address, IF this is a specific place. Leave as a BLANK STRING (\"\"), if this is a general activity (like 'Lunch').",
-            "category": "e.g., Museum, Restaurant, Activity",
-            "is_specific_place": true, 
+            "name": "Name of the place",
+            "category": "e.g., Museum, Restaurant",
             "start_time": "HH:MM",
             "end_time": "HH:MM",
             "notes": "A brief note about this place."

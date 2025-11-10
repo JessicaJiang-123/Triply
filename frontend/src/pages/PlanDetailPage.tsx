@@ -9,7 +9,7 @@ import { useRef } from 'react';
 import type { Place, Trip } from '../types/tripTypes';
 import { fetchPlaceImage } from '../utils/fetchPlaceImage';
 
-const DEFAULT_PLACE_IMAGE = '/default_place_image.jpg'; // Path to default place image
+const DEFAULT_PLACE_IMAGE = '/login_bg.jpg'; // Path to default place image
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
@@ -103,7 +103,7 @@ export default function PlanDetailPage(): ReactElement {
   useEffect(() => {
     if (isFetchingImages.current) return;
     
-    const placesToUpdate = places.filter((p) => !p.image_url && p.address);
+    const placesToUpdate = places.filter((p) => !p.image_url);
 
     if (placesToUpdate.length === 0) return;
 
