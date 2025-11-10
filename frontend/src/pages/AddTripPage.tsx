@@ -26,6 +26,8 @@ export default function AddTripPage() {
     preferences: [] as string[],
   });
   const [submitting, setSubmitting] = useState(false);
+  // AI submission states
+  const [isAiSubmitting, setIsAiSubmitting] = useState(false);
   const [isCityInvalid, setIsCityInvalid] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -130,6 +132,55 @@ export default function AddTripPage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Handle AI-generated trip plan submission
+  const handleAIGenerate = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    
+    // same as handleSubmit validations
+    e.preventDefault();
+    setErrorMsg(null);
+
+    // Validate destination city (not empty)
+    if (!formData.destination_city.trim()) {
+      setIsCityInvalid(true);
+      return;
+    }
+
+    // Validate dates
+    if (new Date(formData.end_date) < new Date(formData.start_date)) {
+      setErrorMsg('End date cannot be earlier than start date.');
+      return;
+    }
+
+    setIsAiSubmitting(true);
+
+    try {
+      // call AI plan generation endpoint
+      const response = await axiosInstance.post(
+        '/api/plans/generate-ai-plan/',
+        formData
+      );
+
+      // {"trip_id": ..., "first_day_id": ...}
+      const { trip_id, first_day_id } = response.data;
+
+      if (first_day_id && trip_id) {
+        // Navigate to PlanDetailPage
+        navigate(`/trips/${trip_id}/days/${first_day_id}`);
+      } else {
+        console.error('AI response is missing data.');
+        navigate('/trips');
+      }
+    } catch (error) {
+      // same as handleSubmit error handling
+      console.error('Failed to generate AI trip:', error);
+      setErrorMsg(
+        error instanceof Error ? error.message : 'Failed to generate trip.'
+      );
+    } finally {
+      setIsAiSubmitting(false);
     }
   };
 
@@ -244,12 +295,22 @@ export default function AddTripPage() {
 
               <div className="text-center mt-4 d-flex justify-content-center gap-3">
                 <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={submitting}
+                  variant="outline-primary"
+                  type="button"
+                  onClick={handleAIGenerate}
+                  disabled={submitting || isAiSubmitting}
                   className="px-4"
                 >
-                  {submitting ? 'Creating...' : 'Create Trip'}
+                  {isAiSubmitting ? 'Generating...' : '✨ Generate with AI'}
+                </Button>
+
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={submitting || isAiSubmitting}
+                  className="px-4"
+                >
+                  {submitting ? 'Creating...' : 'Create Manually'}
                 </Button>
 
                 <Button
@@ -257,6 +318,7 @@ export default function AddTripPage() {
                   type="button"
                   className="px-4"
                   onClick={() => navigate('/trips')}
+                  disabled={submitting || isAiSubmitting}
                 >
                   Cancel
                 </Button>
