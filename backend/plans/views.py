@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from rest_framework.decorators import action
 from .models import Trip, Day, Place
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer
+from . import ai_planner
 
 # Owner-only retrieve view
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -232,3 +233,119 @@ class PlaceForDayAPIView(APIView):
         remaining = Place.objects.filter(day=day_obj).order_by('order')
         serializer = PlaceSerializer(remaining, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+# AI trip planner
+class AIGeneratePlanView(APIView):
+    """
+    Handle generating a new trip plan using the AI Planner.
+    POST: /api/plans/generate-ai-plan/
+    """
+    
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        """
+        Receives trip data from AddTripPage, creates Trip/Days,
+        calls AI Planner, and creates Places.
+        """
+        
+        # get data from frontend (AddTripPage)
+        try:
+            trip_name = request.data['name']
+            destination_city = request.data['destination_city']
+            start_date_str = request.data['start_date']
+            end_date_str = request.data['end_date']
+            preferences = request.data.get('preferences', [])
+
+            start_date = datetime.date.fromisoformat(start_date_str)
+            end_date = datetime.date.fromisoformat(end_date_str)
+            
+            if end_date < start_date:
+                return Response(
+                    {"detail": "End date cannot be earlier than start date."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            num_days = (end_date - start_date).days + 1
+
+        except (KeyError, ValueError) as e:
+            return Response(
+                {"detail": f"Invalid or missing data: {e}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # create trip and day objects based on models.py
+        try:
+            # Trip object (ignore image_url for now)
+            new_trip = Trip.objects.create(
+                user=request.user,
+                name=trip_name,
+                destination_city=destination_city,
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            # Day objects
+            days_list = []
+            current_date = start_date
+            for i in range(num_days):
+                new_day = Day.objects.create(
+                    trip=new_trip,
+                    date=current_date,
+                    order=i + 1
+                )
+                days_list.append(new_day)
+                current_date += timedelta(days=1)
+            
+            # call AI planner to get place recommendations
+            recommendations = ai_planner.generate_trip_recommendations(
+                trip_name, destination_city, preferences, num_days
+            )
+            
+            if recommendations is None:
+                raise Exception("AI planner failed to return recommendations.")
+
+            for day_plan in recommendations:
+                # (e.g., day_plan = { "day": 1, "places": [...] })
+                day_number = day_plan.get('day')
+                day_index = day_number - 1
+                
+                if 0 <= day_index < len(days_list):
+                    current_day_object = days_list[day_index]
+                    
+                    ai_places_list = day_plan.get('places', [])
+                    for order_index, place_data in enumerate(ai_places_list):
+                        # (e.g., place_data = { "name": "...", "address": "..." })
+                        
+                        # Place objects (ignore image_url for now)
+                        Place.objects.create(
+                            day=current_day_object,
+                            order=order_index + 1,
+                            
+                            name=place_data.get('name'),
+                            address=place_data.get('address', ''),
+                            category=place_data.get('category', ''),
+                            start_time=place_data.get('start_time'),
+                            end_time=place_data.get('end_time'),
+                            notes=place_data.get('notes', '')
+                        )
+
+
+            first_day_id = days_list[0].id if days_list else None
+            
+            return Response(
+                {
+                    "trip_id": new_trip.pk,
+                    "first_day_id": first_day_id
+                },
+                status=status.HTTP_201_CREATED
+            )
+        
+        except Exception as e:
+            print(f"ERROR: Failed during AI plan creation: {e}")
+            return Response(
+                {"detail": f"An error occurred while generating the AI plan: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
