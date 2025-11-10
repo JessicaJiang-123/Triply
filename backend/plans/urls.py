@@ -25,7 +25,7 @@ urlpatterns = [
      
      # AI-generated plan
      path(
-        'generate-ai-plan/', 
+        'generate-ai-plan/',
         views.AIGeneratePlanView.as_view(), 
         name='generate-ai-plan'
     ),

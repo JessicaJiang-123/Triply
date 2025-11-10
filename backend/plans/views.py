@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from django.db import models as dj_models
 from django.db import transaction
 from django.db.models import F
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from rest_framework.decorators import action
 from .models import Trip, Day, Place
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer
@@ -259,9 +259,9 @@ class AIGeneratePlanView(APIView):
             end_date_str = request.data['end_date']
             preferences = request.data.get('preferences', [])
 
-            start_date = datetime.date.fromisoformat(start_date_str)
-            end_date = datetime.date.fromisoformat(end_date_str)
-            
+            start_date = date.fromisoformat(start_date_str)
+            end_date = date.fromisoformat(end_date_str)
+
             if end_date < start_date:
                 return Response(
                     {"detail": "End date cannot be earlier than start date."},
