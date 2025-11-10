@@ -5,6 +5,7 @@ import axiosInstance from '../api/axiosInstance';
 import NavigationBar from '../components/NavigationBar';
 import { Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
+import Map from '../components/Map';
 import { useRef } from 'react';
 import type { Place, Trip } from '../types/tripTypes';
 
@@ -250,7 +251,8 @@ export default function PlanDetailPage(): ReactElement {
             overflow: 'hidden', // keep right pane static
           }}
         >
-          {/* your map / placeholder */}
+          {/* Map / Place Detail */}
+          <Map places={places} />
         </div>
       </div>
     </>
