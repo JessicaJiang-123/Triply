@@ -12,6 +12,7 @@ export type Place = {
   longitude?: number;
   image_url?: string;
   address?: string;
+  mapbox_id?: string;
 };
 
 export type Day = {
