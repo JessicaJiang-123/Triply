@@ -31,6 +31,7 @@ export default function AddPlacePage() {
     start_time: '',
     end_time: '',
     notes: '',
+    mapbox_id: '',
   });
 
   const [changeCover, setChangeCover] = useState(false);
@@ -70,6 +71,7 @@ export default function AddPlacePage() {
           start_time: place.start_time || '',
           end_time: place.end_time || '',
           notes: place.notes || '',
+          mapbox_id: place.mapbox_id || '',
         });
       } catch (error) {
         console.error('Failed to fetch place details:', error);
@@ -95,11 +97,13 @@ export default function AddPlacePage() {
 
     const name = feature.properties?.name || '';
     const address = feature.properties?.full_address || '';
+    const mapbox_id = feature.properties?.mapbox_id || '';
 
     setFormData((prev) => ({
       ...prev,
       name: name,
       address: address,
+      mapbox_id: mapbox_id,
     }));
   };
 
@@ -108,6 +112,7 @@ export default function AddPlacePage() {
       ...prev,
       name: '',
       address: '',
+      mapbox_id: '',
     }));
   };
 

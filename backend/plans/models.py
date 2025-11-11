@@ -35,9 +35,31 @@ class Day(models.Model):
         return f"Day {self.order} of {self.trip} - {self.date}"
 
 
+class SharedPlace(models.Model):
+    """Canonical/shared place feature (e.g. Mapbox feature).
+
+    A combination of mapbox_id and worldview uniquely identifies a Mapbox
+    feature. Store optional metadata returned from Mapbox in `metadata`.
+    """
+    # Mapbox feature identifier. We will use mapbox_id as the unique
+    # canonical identifier for a shared place.
+    mapbox_id = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return f"SharedPlace {self.name or self.mapbox_id}"
+
+
 class Place(models.Model):
     day = models.ForeignKey(
         Day, on_delete=models.CASCADE, related_name='places')
+    # Mapbox feature identifier
+    mapbox_id = models.CharField(max_length=255, blank=True)
+    # Bind to the canonical SharedPlace
+    shared_place = models.ForeignKey(
+        'SharedPlace', on_delete=models.SET_NULL, null=True, blank=True, related_name='user_places')
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=50, blank=True)
     start_time = models.TimeField(null=True, blank=True)
@@ -71,39 +93,23 @@ class RouteSegment(models.Model):
 
 
 class PlaceComment(models.Model):
-    """User comments for a Place."""
-    place = models.ForeignKey(
-        Place, on_delete=models.CASCADE, related_name='comments')
+    """User comments bound to a SharedPlace (canonical Mapbox feature).
+
+    Storing comments on the SharedPlace makes them visible across different
+    users' `Place` instances that point to the same Mapbox feature.
+    """
+    shared_place = models.ForeignKey(
+        'SharedPlace', on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='place_comments')
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    # If a comment can have images, we store them in a separate CommentImage model below.
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Comment by {self.user} on {self.place}"
-
-
-class PlaceImage(models.Model):
-    """Images associated with a Place. Using URLField to avoid requiring MEDIA setup.
-    If you prefer storing uploads on the server, change to ImageField and configure MEDIA settings.
-    """
-    place = models.ForeignKey(
-        Place, on_delete=models.CASCADE, related_name='images')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL,
-                             null=True, blank=True, related_name='place_images')
-    image_url = models.URLField(max_length=1024)
-    caption = models.CharField(max_length=200, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"Image for {self.place} ({self.image_url})"
+        return f"Comment by {self.user} on {self.shared_place}"
 
 
 class CommentImage(models.Model):
@@ -113,7 +119,6 @@ class CommentImage(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL,
                              null=True, blank=True, related_name='comment_images')
     image_url = models.URLField(max_length=1024)
-    caption = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
