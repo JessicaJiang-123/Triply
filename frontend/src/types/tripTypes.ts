@@ -33,3 +33,27 @@ export type Trip = {
   image_url?: string;
   firstDayId?: number;
 };
+
+export type SharedPlace = {
+  mapbox_id: string;
+  name: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export type PlaceComment = {
+  id: number;
+  mapbox_id: string;
+  text: string;
+  created_at: string;
+  author: { id: number; username: string; } | null;
+  images?: CommentImage[];
+};
+
+export type CommentImage = {
+  id: number;
+  comment_id: number;
+  image_url: string;
+  created_at: string;
+  uploaded_by?: { id: number; username: string; } | null;
+}
