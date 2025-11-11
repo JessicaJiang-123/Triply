@@ -14,7 +14,6 @@ import Select from 'react-select';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
-import { fetchPlaceImage } from '../utils/fetchPlaceImage';
 import type { Trip } from '../types/tripTypes';
 
 export default function AddTripPage() {
@@ -102,13 +101,7 @@ export default function AddTripPage() {
     setSubmitting(true);
 
     try {
-      // Fetch image URL based on destination city
-      const imageUrl = await fetchPlaceImage(
-        formData.destination_city.split(',')[0]
-      );
-      console.log('Fetched image URL:', imageUrl);
-
-      const payload = { ...formData, image_url: imageUrl };
+      const payload = { ...formData };
       console.log('Submitting trip data:', payload);
       const response = await axiosInstance.post('/api/plans/trips/', payload);
       console.log('Trip created:', response.data);
@@ -137,7 +130,6 @@ export default function AddTripPage() {
 
   // Handle AI-generated trip plan submission
   const handleAIGenerate = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    
     // same as handleSubmit validations
     e.preventDefault();
     setErrorMsg(null);
