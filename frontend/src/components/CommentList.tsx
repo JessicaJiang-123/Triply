@@ -6,9 +6,10 @@ import CommentCard from './CommentCard';
 
 type Props = {
   mapboxId?: string | null;
+  refreshKey?: number;
 };
 
-export default function CommentList({ mapboxId }: Props): ReactElement | null {
+export default function CommentList({ mapboxId, refreshKey }: Props): ReactElement | null {
   const [comments, setComments] = useState<PlaceComment[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export default function CommentList({ mapboxId }: Props): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [mapboxId]);
+  }, [mapboxId, refreshKey]);
 
   if (!mapboxId) return null;
 
