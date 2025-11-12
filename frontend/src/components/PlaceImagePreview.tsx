@@ -10,7 +10,6 @@ type ImagePreviewProps = {
 
 export default function PlaceImagePreview({
     mapboxId,
-    placeName,
 }: ImagePreviewProps): ReactElement | null {
     const [images, setImages] = useState<CommentImage[] | null>(null);
     const [loading, setLoading] = useState(false);
@@ -72,7 +71,6 @@ export default function PlaceImagePreview({
     if (loading) {
         return (
             <div>
-                <div className="fw-semibold mb-2">{placeName || 'Place'}</div>
                 <div className="text-muted">Loading images…</div>
             </div>
         );
@@ -80,20 +78,14 @@ export default function PlaceImagePreview({
 
     const list = images || [];
 
-    // If no images found, render only the place name
+    // If no images found, render
     if (list.length === 0) {
-        return (
-            <div>
-                <div className="fw-semibold">{placeName || 'Place'}</div>
-            </div>
-        );
+        return <div className="text-muted">Waiting for your images!</div>;
     }
 
-    // Render name + horizontal image strip (inline within panel)
+    // Render horizontal image strip (inline within panel)
     return (
         <div>
-            <div className="fw-semibold mb-2">{placeName || 'Place'}</div>
-
             {/* Image strip: use Bootstrap utilities for layout and spacing */}
             <div
                 className="d-flex gap-3 overflow-auto p-2 bg-white rounded"

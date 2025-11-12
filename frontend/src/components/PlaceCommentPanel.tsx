@@ -17,7 +17,7 @@ export default function PlaceCommentPanel({ mapboxId, placeName, onClose }: Prop
     return (
         <div className="p-3 d-flex flex-column" style={{ height: '100%', position: 'relative' }}>
             <div className="d-flex justify-content-between align-items-start mb-2">
-                <div className="fw-semibold">{placeName || 'Place'}</div>
+                <div className="mb-0 fw-bold fs-4">{placeName || 'Place'}</div>
                 <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
             </div>
 
@@ -31,9 +31,9 @@ export default function PlaceCommentPanel({ mapboxId, placeName, onClose }: Prop
                 </div>
             </div>
 
-            {/* absolutely positioned add comment form at bottom-right */}
-            <div style={{ position: 'absolute', right: 12, bottom: 12, left: 12 }}>
-                <div style={{ maxWidth: 720, marginLeft: 'auto' }}>
+            {/* absolutely positioned add comment form centered at bottom */}
+            <div style={{ position: 'absolute', left: '50%', bottom: 12, transform: 'translateX(-50%)', width: '100%', paddingLeft: 12, paddingRight: 12 }}>
+                <div style={{ maxWidth: 720, margin: '0 auto' }}>
                     <AddCommentForm
                         mapboxId={mapboxId}
                         onPosted={() => {
