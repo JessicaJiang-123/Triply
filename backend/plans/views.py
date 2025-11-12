@@ -14,7 +14,7 @@ from .serializers import DaySerializer, TripSerializer, PlaceSerializer, PlaceCo
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 import uuid
 
 # Owner-only retrieve view
@@ -315,17 +315,56 @@ class PlaceCommentAPIView(APIView):
         shared_place = get_object_or_404(SharedPlace, mapbox_id=mapbox_id)
 
         text = request.data.get('text', '')
-        image_urls = request.data.get('image_urls', [])
+        raw_image_urls = request.data.get('image_urls', [])
 
-        if not isinstance(image_urls, list):
+        # Normalize incoming image_urls which may be strings or objects like {image_url: "..."}
+        if not isinstance(raw_image_urls, list):
             return Response({"image_urls": "must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+
+        image_urls: list[str] = []
+        for it in raw_image_urls:
+            if isinstance(it, str):
+                image_urls.append(it)
+            elif isinstance(it, dict) and 'image_url' in it:
+                val = it.get('image_url')
+                if isinstance(val, str):
+                    image_urls.append(val)
+        # enforce max images
         if len(image_urls) > 3:
             return Response({"image_urls": "You can upload a maximum of 3 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Validate each URL comes from our MEDIA_URL and that the file exists in storage
+        def _storage_path_from_url(u: str) -> str | None:
+            try:
+                parsed = urlparse(u)
+            except Exception:
+                return None
+            # Prefer parsed.path check (handles absolute and relative URLs)
+            path = parsed.path or u
+            if path.startswith(settings.MEDIA_URL):
+                # strip leading MEDIA_URL
+                storage_path = path[len(settings.MEDIA_URL):].lstrip('/')
+                return storage_path
+            # also allow bare relative urls starting with MEDIA_URL
+            if u.startswith(settings.MEDIA_URL):
+                return u[len(settings.MEDIA_URL):].lstrip('/')
+            return None
+
+        validated_urls: list[str] = []
+        for u in image_urls:
+            storage_path = _storage_path_from_url(u)
+            if not storage_path:
+                return Response({"image_urls": "Contains disallowed or external URL"}, status=status.HTTP_400_BAD_REQUEST)
+            # confirm file exists
+            if not default_storage.exists(storage_path):
+                return Response({"image_urls": f"Uploaded image not found: {u}"}, status=status.HTTP_400_BAD_REQUEST)
+            validated_urls.append(u)
+
+        # All validations passed — create comment and image records
         with transaction.atomic():
             comment = PlaceComment.objects.create(shared_place=shared_place, user=request.user, text=text)
             created_images = []
-            for url in image_urls:
+            for url in validated_urls:
                 img = CommentImage.objects.create(comment=comment, user=request.user, image_url=url)
                 created_images.append(img)
 
@@ -390,7 +429,16 @@ class UploadCommentImageAPIView(APIView):
 
         urls = []
         # cap a reasonable number per request
-        for f in files[:5]:
+        MAX_FILES = 5
+        MAX_SIZE = 5 * 1024 * 1024  # 5MB
+        for f in files[:MAX_FILES]:
+            # server-side validations: mime and size
+            content_type = getattr(f, 'content_type', '')
+            if not content_type.startswith('image/'):
+                return Response({'detail': 'Only image/* files are allowed'}, status=status.HTTP_400_BAD_REQUEST)
+            if f.size > MAX_SIZE:
+                return Response({'detail': 'Each file must be <= 5MB'}, status=status.HTTP_400_BAD_REQUEST)
+
             # save file with a uuid prefix to avoid collisions
             name = f"{uuid.uuid4().hex}_{f.name}"
             path = default_storage.save(f"comment_images/{name}", ContentFile(f.read()))
