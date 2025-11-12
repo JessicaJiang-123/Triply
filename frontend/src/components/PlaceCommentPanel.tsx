@@ -26,20 +26,22 @@ export default function PlaceCommentPanel({ mapboxId, placeName, onClose }: Prop
             <div style={{ marginTop: 12 }} className="d-flex flex-column" >
                 <h5 className="mb-3">Real Comments</h5>
                 {/* make the comment list take the remaining space and scroll */}
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 120 }}>
                     <CommentList mapboxId={mapboxId} refreshKey={refresh} />
                 </div>
             </div>
 
-            {/* fixed add comment form at bottom */}
-            <div style={{ position: 'sticky', bottom: 0, background: 'white', paddingTop: 12 }}>
-                <AddCommentForm
-                    mapboxId={mapboxId}
-                    onPosted={() => {
-                        // bump refreshKey in parent to make CommentList refetch
-                        setRefresh((r) => r + 1);
-                    }}
-                />
+            {/* absolutely positioned add comment form at bottom-right */}
+            <div style={{ position: 'absolute', right: 12, bottom: 12, left: 12 }}>
+                <div style={{ maxWidth: 720, marginLeft: 'auto' }}>
+                    <AddCommentForm
+                        mapboxId={mapboxId}
+                        onPosted={() => {
+                            // bump refreshKey in parent to make CommentList refetch
+                            setRefresh((r) => r + 1);
+                        }}
+                    />
+                </div>
             </div>
         </div>
     );

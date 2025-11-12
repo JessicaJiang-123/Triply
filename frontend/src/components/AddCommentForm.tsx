@@ -16,7 +16,6 @@ export default function AddCommentForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -85,11 +84,19 @@ export default function AddCommentForm({
         }
       );
 
-      const returned: { images: Array<{ image_url: string }> } = resp.data;
-      // response now returns absolute URLs; defensively extract strings
-      const urls = returned.images
-        .map((i) => (typeof i === 'string' ? i : i.image_url))
-        .filter(Boolean);
+      // response expected shape: { images: Array<string | { image_url: string }> }
+      const imgs = resp.data?.images || [];
+      const urls = imgs
+        .map((i: unknown) => {
+          if (typeof i === 'string') return i;
+          if (i && typeof i === 'object' && 'image_url' in (i as Record<string, unknown>)) {
+            const obj = i as Record<string, unknown>;
+            const v = obj['image_url'];
+            return typeof v === 'string' ? v : undefined;
+          }
+          return undefined;
+        })
+        .filter(Boolean) as string[];
       setImageUrls((s) => [...s, ...urls].slice(0, 3));
     } catch (err) {
       console.error('Upload failed', err);
@@ -127,28 +134,6 @@ export default function AddCommentForm({
           {loading ? 'Posting…' : 'Post'}
         </Button>
       </InputGroup>
-      {/* Image URL add UI */}
-      <div className="d-flex align-items-center gap-2 mt-2">
-        <FormControl
-          placeholder="Image URL (optional)"
-          value={newImageUrl}
-          onChange={(e) => setNewImageUrl(e.target.value)}
-          disabled={loading || imageUrls.length >= 3}
-        />
-        <Button
-          variant="outline-secondary"
-          onClick={() => {
-            const url = newImageUrl.trim();
-            if (!url) return;
-            if (imageUrls.length >= 3) return;
-            setImageUrls((s) => [...s, url]);
-            setNewImageUrl('');
-          }}
-          disabled={loading || !newImageUrl.trim() || imageUrls.length >= 3}
-        >
-          Add
-        </Button>
-      </div>
 
       {uploading && <div className="small text-muted mt-2">Uploading…</div>}
       {uploadError && (

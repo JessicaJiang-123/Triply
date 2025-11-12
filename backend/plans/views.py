@@ -14,7 +14,8 @@ from .serializers import DaySerializer, TripSerializer, PlaceSerializer, PlaceCo
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, unquote
+import os
 import uuid
 
 # Owner-only retrieve view
@@ -341,13 +342,15 @@ class PlaceCommentAPIView(APIView):
                 return None
             # Prefer parsed.path check (handles absolute and relative URLs)
             path = parsed.path or u
-            if path.startswith(settings.MEDIA_URL):
+            # URL-decode the path to match storage keys (handles %20 etc.)
+            path_unquoted = unquote(path)
+            if path_unquoted.startswith(settings.MEDIA_URL):
                 # strip leading MEDIA_URL
-                storage_path = path[len(settings.MEDIA_URL):].lstrip('/')
+                storage_path = path_unquoted[len(settings.MEDIA_URL):].lstrip('/')
                 return storage_path
             # also allow bare relative urls starting with MEDIA_URL
             if u.startswith(settings.MEDIA_URL):
-                return u[len(settings.MEDIA_URL):].lstrip('/')
+                return unquote(u[len(settings.MEDIA_URL):]).lstrip('/')
             return None
 
         validated_urls: list[str] = []
@@ -440,7 +443,9 @@ class UploadCommentImageAPIView(APIView):
                 return Response({'detail': 'Each file must be <= 5MB'}, status=status.HTTP_400_BAD_REQUEST)
 
             # save file with a uuid prefix to avoid collisions
-            name = f"{uuid.uuid4().hex}_{f.name}"
+            # generate a safe filename using uuid + original extension
+            _, ext = os.path.splitext(f.name or '')
+            name = f"{uuid.uuid4().hex}{ext}"
             path = default_storage.save(f"comment_images/{name}", ContentFile(f.read()))
             image_url = urljoin(settings.MEDIA_URL, path)
             # build absolute URL using request context
