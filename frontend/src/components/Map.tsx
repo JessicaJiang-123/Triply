@@ -84,7 +84,7 @@ const Map: React.FC<MapProps> = ({ places, center, routes }) => {
 
       // Wait until map is ready
       map.on('load', async () => {
-        // Remove existing markers if any
+        // Remove existing markers
         const markers = document.getElementsByClassName('mapbox-marker');
         while (markers.length > 0) {
           markers[0].remove();
@@ -108,17 +108,24 @@ const Map: React.FC<MapProps> = ({ places, center, routes }) => {
         validPlaces.forEach((place) => {
           const el = document.createElement('div');
           el.className = 'mapbox-marker';
-          el.style.width = '24px';
-          el.style.height = '24px';
-          el.style.backgroundImage =
-            'url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%2722%27 height=%2722%27 fill=%27%23c41230%27 class=%27bi bi-geo-alt-fill%27 viewBox=%270 0 16 16%27><path d=%27M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6%27/></svg>")';
-          el.style.backgroundSize = 'contain';
-          el.style.backgroundRepeat = 'no-repeat';
+          el.style.width = '28px';
+          el.style.height = '28px';
+          el.style.borderRadius = '50%';
+          el.style.backgroundColor = '#c41230';
+          el.style.display = 'flex';
+          el.style.alignItems = 'center';
+          el.style.justifyContent = 'center';
+          el.style.color = 'white';
+          el.style.fontWeight = '600';
+          el.style.fontSize = '13px';
+          el.style.border = '2px solid white';
+          el.style.boxShadow = '0 0 3px rgba(0,0,0,0.3)';
           el.style.cursor = 'pointer';
+          el.innerText = place.order?.toString() || '?';
 
           const popupContent = `
             <div style="font-family: Poppins, sans-serif; font-size: 13px;">
-              <strong>${place.name}</strong>
+              <strong>${place.order}. ${place.name}</strong>
               ${place.address ? `<br/>${place.address}` : ''}
             </div>
           `;
