@@ -12,16 +12,7 @@ export default function PlaceCommentPanel({ mapboxId, placeName, onClose }: Prop
 	if (!mapboxId) return null;
 
 	return (
-		<div
-			style={{
-				position: 'fixed',
-				top: 80,
-				right: 24,
-				width: '48vw',
-				maxWidth: 720,
-				zIndex: 1100,
-			}}
-		>
+		<div className="p-3" style={{ height: '100%', overflow: 'auto' }}>
 			<div className="d-flex justify-content-between align-items-start mb-2">
 				<div className="fw-semibold">{placeName || 'Place'}</div>
 				<button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>

@@ -71,18 +71,8 @@ export default function PlaceImagePreview({
     // Loading state: show place name and spinner-like text
     if (loading) {
         return (
-            <div
-                style={{
-                    padding: 12,
-                    position: 'fixed',
-                    top: 80,
-                    right: 24,
-                    zIndex: 1100,
-                }}
-            >
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                    {placeName || 'Place'}
-                </div>
+            <div>
+                <div className="fw-semibold mb-2">{placeName || 'Place'}</div>
                 <div className="text-muted">Loading images…</div>
             </div>
         );
@@ -93,32 +83,15 @@ export default function PlaceImagePreview({
     // If no images found, render only the place name
     if (list.length === 0) {
         return (
-            <div
-                style={{
-                    padding: 12,
-                    position: 'fixed',
-                    top: 80,
-                    right: 24,
-                    zIndex: 1100,
-                }}
-            >
-                <div style={{ fontWeight: 600 }}>{placeName || 'Place'}</div>
+            <div>
+                <div className="fw-semibold">{placeName || 'Place'}</div>
             </div>
         );
     }
 
-    // Render name + horizontal image strip (no modal)
+    // Render name + horizontal image strip (inline within panel)
     return (
-        <div
-            style={{
-                position: 'fixed',
-                top: 80,
-                right: 24,
-                width: '48vw',
-                maxWidth: 720,
-                zIndex: 1100,
-            }}
-        >
+        <div>
             <div className="fw-semibold mb-2">{placeName || 'Place'}</div>
 
             {/* Image strip: use Bootstrap utilities for layout and spacing */}
@@ -126,7 +99,7 @@ export default function PlaceImagePreview({
                 className="d-flex gap-3 overflow-auto p-2 bg-white rounded"
                 style={{
                     background: 'rgba(255,255,255,0.95)',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.04)',
                 }}
             >
                 {list.map((img, idx) => (
@@ -135,7 +108,6 @@ export default function PlaceImagePreview({
                         className="flex-shrink-0 rounded overflow-hidden"
                         style={{ width: 240, height: 160 }}
                     >
-                        {/* Use img-fluid to make image scale within container */}
                         <img
                             src={img.image_url}
                             alt={`place-img-${img.id || idx}`}
