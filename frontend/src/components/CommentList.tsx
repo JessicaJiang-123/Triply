@@ -53,10 +53,17 @@ export default function CommentList({ mapboxId, refreshKey }: Props): ReactEleme
 
   if (list.length === 0) return <div className="text-muted">No comments yet.</div>;
 
+  // Render a self-contained scrollable list. Parent can override sizing via CSS if needed.
   return (
-    <div>
+    <div
+      className="comment-list-scrollable"
+      style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}
+      role="list"
+    >
       {list.map((c) => (
-        <CommentCard key={c.id} comment={c} />
+        <div role="listitem" key={c.id}>
+          <CommentCard comment={c} />
+        </div>
       ))}
     </div>
   );
