@@ -171,6 +171,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Media files
 MEDIA_ROOT = BASE_DIR / "images"
+MEDIA_URL = "/images/"
 
 # Cookie settings
 SESSION_COOKIE_SAMESITE = "None"

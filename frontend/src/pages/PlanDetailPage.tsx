@@ -5,7 +5,7 @@ import axiosInstance from '../api/axiosInstance';
 import NavigationBar from '../components/NavigationBar';
 import { Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
-import PlacePreviewPanel from '../components/PlacePreviewPanel';
+import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import { useRef } from 'react';
 import type { Place, Trip } from '../types/tripTypes';
 
@@ -246,23 +246,29 @@ export default function PlanDetailPage(): ReactElement {
           </div>
         </div>
 
-        {/* Right Column — Map or preview panel */}
+        {/* Right Column — Comment panel only */}
         <div
           style={{
             flexGrow: 1,
             backgroundColor: '#fafafa',
-            overflow: 'hidden', // keep right pane static
+            overflow: 'hidden',
             display: 'flex',
           }}
         >
-          {/* main map area placeholder */}
           <div style={{ flex: 1, padding: 16 }}>
-            {/* TODO: place map here */}
-          </div>
-
-          {/* right-side preview panel */}
-          <div style={{ width: 360, borderLeft: '1px solid #eaeaea', background: '#fff' }}>
-            <PlacePreviewPanel mapboxId={selectedMapboxId} />
+            {(() => {
+              const selected = places.find((p) => p.mapbox_id === selectedMapboxId);
+              const mapboxId = selected?.mapbox_id || null;
+              const placeName = selected?.name || '';
+              if (!mapboxId) {
+                return (
+                  <div className="d-flex align-items-center justify-content-center text-muted" style={{ width: '100%', height: '100%' }}>
+                    Select a place to view comments
+                  </div>
+                );
+              }
+              return <PlaceCommentPanel mapboxId={mapboxId} placeName={placeName} onClose={() => setSelectedMapboxId(null)} />;
+            })()}
           </div>
         </div>
       </div>

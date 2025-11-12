@@ -52,6 +52,7 @@ export type PlaceComment = {
 
 export type CommentImage = {
   id: number;
+  mapbox_id: string;
   comment_id: number;
   image_url: string;
   created_at: string;

@@ -11,6 +11,12 @@ from rest_framework.decorators import action
 from .models import Trip, Day, Place, PlaceComment, CommentImage, SharedPlace
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer, PlaceCommentSerializer, CommentImageSerializer
 
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
+from urllib.parse import urljoin
+import uuid
+
 # Owner-only retrieve view
 
 
@@ -274,96 +280,6 @@ class PlaceForDayAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class PlaceCommentCreateAPIView(APIView):
-    """Create a comment for a place. Accepts optional image_urls list (<=5).
-
-    Notes:
-    - Comments are independent of trip ownership; any authenticated user
-      may comment on any place. The trip_id/day_id in the URL are only used
-      to locate the target place and validate the URL structure.
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, trip_id, day_id, place_id):
-        # We do not enforce trip ownership here; any authenticated user can comment.
-        day_obj = get_object_or_404(Day, pk=day_id, trip__pk=trip_id)
-        place = get_object_or_404(Place, pk=place_id, day=day_obj)
-
-        # Prefer an explicit mapbox_id in the request body so clients can
-        # create comments without relying on the place_id lookup.
-        mapbox_id = (request.data.get('mapbox_id') or '').strip()
-        shared_place = None
-        if place.mapbox_id:
-            shared_place, _ = SharedPlace.objects.get_or_create(
-                mapbox_id=place.mapbox_id,
-                defaults={
-                    'name': place.name or '',
-                    'latitude': place.latitude,
-                    'longitude': place.longitude,
-                }
-            )
-        else:
-            # If the place doesn't have a mapbox_id, we cannot attach to a shared feature
-            return Response({"detail": "Place does not have mapbox_id; cannot attach shared comment."}, status=status.HTTP_400_BAD_REQUEST)
-
-        text = request.data.get('text', '')
-        image_urls = request.data.get('image_urls', [])
-
-        # image_urls is optional; validate type early to provide a clear error
-        if not isinstance(image_urls, list):
-            return Response({"image_urls": "must be a list"}, status=status.HTTP_400_BAD_REQUEST)
-        if len(image_urls) > 5:
-            # Enforce per-comment image limit to avoid excessive storage/abuse
-            return Response({"image_urls": "You can upload a maximum of 5 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Create comment and images in a transaction
-        with transaction.atomic():
-            comment = PlaceComment.objects.create(shared_place=shared_place, user=request.user, text=text)
-            created_images = []
-            for url in image_urls:
-                img = CommentImage.objects.create(comment=comment, user=request.user, image_url=url)
-                created_images.append(img)
-
-            comment_data = PlaceCommentSerializer(comment).data
-            images_data = CommentImageSerializer(created_images, many=True).data
-            return Response({"comment": comment_data, "images": images_data}, status=status.HTTP_201_CREATED)
-
-
-class CommentImageUploadAPIView(APIView):
-    """Upload (attach) images to an existing comment. Enforces <=5 images per comment.
-
-    Only the original comment author may attach images. Trip ownership is not
-    considered here because any authenticated user may comment on any place.
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, comment_id):
-        comment = get_object_or_404(PlaceComment, pk=comment_id)
-        # Only the comment author may attach images to their comment.
-        if request.user != comment.user:
-            return Response({"detail": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
-
-        image_urls = request.data.get('image_urls', [])
-        # validate input format
-        if not isinstance(image_urls, list):
-            return Response({"image_urls": "must be a list"}, status=status.HTTP_400_BAD_REQUEST)
-
-        existing = CommentImage.objects.filter(comment=comment).count()
-        # Check aggregate limit (existing + new) to enforce cap
-        if existing + len(image_urls) > 5:
-            return Response({"detail": "You can upload a maximum of 5 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
-
-        created = []
-        with transaction.atomic():
-            for url in image_urls:
-                img = CommentImage.objects.create(
-                    comment=comment, user=request.user, image_url=url)
-                created.append(img)
-
-        # Return the newly created image records for client-side display
-        return Response(CommentImageSerializer(created, many=True).data, status=status.HTTP_201_CREATED)
-
-
 class PlaceCommentImagesAPIView(APIView):
     """Return a small set of comment images for a place (for a right-top preview)."""
     permission_classes = [permissions.AllowAny]
@@ -371,34 +287,31 @@ class PlaceCommentImagesAPIView(APIView):
     def get(self, request, mapbox_id):
         # Directly resolve the SharedPlace from provided mapbox_id
         shared_place = get_object_or_404(SharedPlace, mapbox_id=mapbox_id)
-        limit = int(request.query_params.get('limit', 5))
-        per_comment = int(request.query_params.get('per_comment', 0))
-
-        if per_comment:
-            images = []
-
-            for comment in shared_place.comments.order_by('-created_at'): # type: ignore
-                img = comment.images.order_by('-created_at').first()
-                if img:
-                    images.append(img)
-                if len(images) >= limit:
-                    break
-        else:
-            # Return the most recent comment images for the place (global recent)
-            images = list(CommentImage.objects.filter(comment__shared_place=shared_place).order_by('-created_at')[:limit])
+        limit = 5 # show up to 5 images
+        
+        # Return the most recent comment images for the place (global recent)
+        images = list(CommentImage.objects.filter(comment__shared_place=shared_place).order_by('-created_at')[:limit])
 
         return Response(CommentImageSerializer(images, many=True).data, status=status.HTTP_200_OK)
 
 
-class PlaceCommentCreateByMapboxAPIView(APIView):
-    """Create a comment for a SharedPlace identified by mapbox_id in the URL.
-
-    Endpoint: POST /api/plans/places/by-mapbox/<mapbox_id>/comments/
-    Payload: { "text": "...", "image_urls": [...], optional other fields }
-    """
+class PlaceCommentAPIView(APIView):
+    
+    # default for non-GET requests
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_permissions(self):
+        # Allow anonymous GET (listing comments) but require auth for POST
+        if getattr(self, 'request', None) and self.request.method == 'GET':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
     def post(self, request, mapbox_id):
+        """Create a comment for a SharedPlace identified by mapbox_id in the URL.
+
+        Endpoint: POST /api/plans/places/by-mapbox/<mapbox_id>/comments/
+        Payload: { "text": "...", "image_urls": [...], optional other fields }
+        """
         shared_place = get_object_or_404(SharedPlace, mapbox_id=mapbox_id)
 
         text = request.data.get('text', '')
@@ -406,8 +319,8 @@ class PlaceCommentCreateByMapboxAPIView(APIView):
 
         if not isinstance(image_urls, list):
             return Response({"image_urls": "must be a list"}, status=status.HTTP_400_BAD_REQUEST)
-        if len(image_urls) > 5:
-            return Response({"image_urls": "You can upload a maximum of 5 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(image_urls) > 3:
+            return Response({"image_urls": "You can upload a maximum of 3 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             comment = PlaceComment.objects.create(shared_place=shared_place, user=request.user, text=text)
@@ -419,3 +332,73 @@ class PlaceCommentCreateByMapboxAPIView(APIView):
         comment_data = PlaceCommentSerializer(comment).data
         images_data = CommentImageSerializer(created_images, many=True).data
         return Response({"comment": comment_data, "images": images_data}, status=status.HTTP_201_CREATED)
+    
+    def get(self, request, mapbox_id):
+        """Retrieve comments for a SharedPlace identified by mapbox_id in the URL.
+
+        Endpoint: GET /api/plans/places/by-mapbox/<mapbox_id>/comments/
+        Query params: ?limit=<int> (optional, default 50, max 200)
+        """
+        shared_place = get_object_or_404(SharedPlace, mapbox_id=mapbox_id)
+
+        # optimize related fetches to avoid N+1
+        qs = PlaceComment.objects.filter(shared_place=shared_place).select_related('user').prefetch_related('images').order_by('-created_at')
+
+        # simple limit param to avoid returning huge payloads
+        try:
+            limit = int(request.query_params.get('limit', 50))
+        except Exception:
+            limit = 50
+        limit = max(1, min(limit, 200))
+
+        comments = list(qs[:limit])
+
+        serializer = PlaceCommentSerializer(comments, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UploadCommentImageAPIView(APIView):
+    """Accept multipart file uploads for comment images and return serialized image records.
+
+    Expects files under the 'images' field. Optionally accepts 'comment_id' to attach to an existing
+    comment, or 'mapbox_id' to create a new empty comment for the shared place and attach images to it.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        files = request.FILES.getlist('images')
+        if not files:
+            return Response({'detail': 'No files uploaded under "images"'}, status=status.HTTP_400_BAD_REQUEST)
+
+        comment_id = request.data.get('comment_id')
+        mapbox_id = request.data.get('mapbox_id')
+
+        comment = None
+        if comment_id:
+            try:
+                comment = PlaceComment.objects.get(pk=int(comment_id))
+            except Exception:
+                return Response({'detail': 'Invalid comment_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        shared_place = None
+        if not comment and mapbox_id:
+            try:
+                shared_place = SharedPlace.objects.get(mapbox_id=mapbox_id)
+            except SharedPlace.DoesNotExist:
+                shared_place = None
+
+        urls = []
+        # cap a reasonable number per request
+        for f in files[:5]:
+            # save file with a uuid prefix to avoid collisions
+            name = f"{uuid.uuid4().hex}_{f.name}"
+            path = default_storage.save(f"comment_images/{name}", ContentFile(f.read()))
+            image_url = urljoin(settings.MEDIA_URL, path)
+            # build absolute URL using request context
+            absolute = request.build_absolute_uri(image_url)
+            urls.append({'image_url': absolute})
+
+        # Return URLs only; no DB records created. Caller should pass these URLs as image_urls when creating the comment.
+        return Response({'images': urls}, status=status.HTTP_201_CREATED)
+    
