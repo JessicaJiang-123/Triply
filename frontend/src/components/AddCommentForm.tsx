@@ -8,7 +8,10 @@ type Props = {
   onPosted?: () => void;
 };
 
-export default function AddCommentForm({ mapboxId, onPosted }: Props): ReactElement | null {
+export default function AddCommentForm({
+  mapboxId,
+  onPosted,
+}: Props): ReactElement | null {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,14 +24,17 @@ export default function AddCommentForm({ mapboxId, onPosted }: Props): ReactElem
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-  if (!text.trim() && imageUrls.length === 0) return;
+    if (!text.trim() && imageUrls.length === 0) return;
     setLoading(true);
     setError(null);
     try {
-      await axiosInstance.post(`/api/plans/places/by-mapbox/${encodeURIComponent(mapboxId)}/comments/`, {
-        text: text.trim(),
-        image_urls: imageUrls,
-      });
+      await axiosInstance.post(
+        `/api/plans/places/by-mapbox/${encodeURIComponent(mapboxId)}/comments/`,
+        {
+          text: text.trim(),
+          image_urls: imageUrls,
+        }
+      );
       setText('');
       setImageUrls([]);
       onPosted?.();
@@ -71,14 +77,20 @@ export default function AddCommentForm({ mapboxId, onPosted }: Props): ReactElem
       // include mapbox_id so backend can attach to place if no comment yet
       form.append('mapbox_id', mapboxId || '');
 
-      const resp = await axiosInstance.post('/api/plans/comments/upload-images/', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const resp = await axiosInstance.post(
+        '/api/plans/comments/upload-images/',
+        form,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
 
-  const returned: { images: Array<{ image_url: string }> } = resp.data;
-  // response now returns absolute URLs; defensively extract strings
-  const urls = returned.images.map((i) => (typeof i === 'string' ? i : i.image_url)).filter(Boolean);
-  setImageUrls((s) => [...s, ...urls].slice(0, 3));
+      const returned: { images: Array<{ image_url: string }> } = resp.data;
+      // response now returns absolute URLs; defensively extract strings
+      const urls = returned.images
+        .map((i) => (typeof i === 'string' ? i : i.image_url))
+        .filter(Boolean);
+      setImageUrls((s) => [...s, ...urls].slice(0, 3));
     } catch (err) {
       console.error('Upload failed', err);
       setUploadError('Upload failed');
@@ -107,11 +119,15 @@ export default function AddCommentForm({ mapboxId, onPosted }: Props): ReactElem
             disabled={uploading || loading || imageUrls.length >= 3}
           />
         </label>
-        <Button variant="primary" type="submit" disabled={loading || !text.trim()}>
+        <Button
+          variant="primary"
+          type="submit"
+          disabled={loading || (!text.trim() && imageUrls.length === 0)}
+        >
           {loading ? 'Posting…' : 'Post'}
         </Button>
       </InputGroup>
-  {/* Image URL add UI */}
+      {/* Image URL add UI */}
       <div className="d-flex align-items-center gap-2 mt-2">
         <FormControl
           placeholder="Image URL (optional)"
@@ -134,22 +150,36 @@ export default function AddCommentForm({ mapboxId, onPosted }: Props): ReactElem
         </Button>
       </div>
 
-  {uploading && <div className="small text-muted mt-2">Uploading…</div>}
-  {uploadError && <div className="text-danger small mt-2">{uploadError}</div>}
+      {uploading && <div className="small text-muted mt-2">Uploading…</div>}
+      {uploadError && (
+        <div className="text-danger small mt-2">{uploadError}</div>
+      )}
 
       {imageUrls.length > 0 && (
         <div className="d-flex gap-2 mt-2">
           {imageUrls.map((u, idx) => (
-            <div key={idx} style={{ width: 80, height: 60, overflow: 'hidden', borderRadius: 8, position: 'relative' }}>
-              <img src={u} alt={`img-${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div
+              key={idx}
+              style={{
+                width: 80,
+                height: 60,
+                overflow: 'hidden',
+                borderRadius: 8,
+                position: 'relative',
+              }}
+            >
+              <img
+                src={u}
+                alt={`img-${idx}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
               <button
                 type="button"
-                className="btn btn-sm btn-light"
+                className="btn-close"
+                aria-label={`Remove image ${idx + 1}`}
                 style={{ position: 'absolute', top: 4, right: 4 }}
                 onClick={() => setImageUrls((s) => s.filter((_, i) => i !== idx))}
-              >
-                ×
-              </button>
+              />
             </div>
           ))}
         </div>
