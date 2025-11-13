@@ -15,6 +15,7 @@ import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
 import type { Trip } from '../types/tripTypes';
+import axios from 'axios';
 
 export default function AddTripPage() {
   const [formData, setFormData] = useState({
@@ -92,9 +93,27 @@ export default function AddTripPage() {
 
     setErrorMsg(null);
 
+    // Validate trip name (not empty)
+    if (!formData.name.trim()) {
+      setErrorMsg('Trip title is required.');
+      return;
+    }
+
     // Validate destination city (not empty)
     if (!formData.destination_city.trim()) {
       setIsCityInvalid(true);
+      return;
+    }
+
+    // Validate start date
+    if (!formData.start_date) {
+      setErrorMsg('Start date is required.');
+      return;
+    }
+
+    // Validate end date
+    if (!formData.end_date) {
+      setErrorMsg('End date is required.');
       return;
     }
 
@@ -137,9 +156,14 @@ export default function AddTripPage() {
       }
     } catch (error) {
       console.error('Failed to create trip:', error);
-      setErrorMsg(
-        error instanceof Error ? error.message : 'Failed to create trip.'
-      );
+      if (axios.isAxiosError(error) && error.response) {
+        setErrorMsg(
+          error.response.data.detail ||
+            'An error occurred while creating the trip.'
+        );
+      } else {
+        setErrorMsg('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
       setIsAiSubmitting(false);
