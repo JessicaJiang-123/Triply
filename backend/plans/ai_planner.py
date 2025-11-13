@@ -45,8 +45,23 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
 
     Travel Preferences: {', '.join(preferences)}
 
+    STRICT RULES:
+    1. Each place must have a valid "start_time" and "end_time".
+    2. "start_time" and "end_time" must occur on the SAME day.
+    3. "start_time" must be EARLIER THAN OR EQUAL TO "end_time".
+    4. Times must be in 24-hour format "HH:MM".
+    5. Times must be chronological in the day's schedule (each place must start at or after the previous place ends).
+    6. EVERY place must have a SPECIFIC and REAL name (e.g., "Louvre Museum", NOT "Downtown Area" or "Beach District").
+    7. The "address" must be a SPECIFIC, PRECISE, REAL address. 
+        - Do NOT give ranges or general zones (e.g., "5th Avenue Shops", "Central Park Area").
+        - Provide full detailed addresses like "123 Main St, City, State, Country".
+    8. Do NOT include descriptions inside the "name" field.
+    9. Do NOT invent vague or fictional venues — use well-known or plausible real places.
+    10. The "notes" field must be a short description with a MAXIMUM of 200 characters.
+
     Respond with ONLY a valid JSON array in the following format.
     Do not include any other text or markdown formatting (like ```json).
+    OUTPUT FORMAT (your output must match this exactly):
 
     [
       {{
@@ -57,7 +72,7 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
             "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
             "start_time": "HH:MM",
             "end_time": "HH:MM",
-            "notes": "A brief note about this place."
+            "notes": "A brief note about this place (<= 200 characters)"
           }}
         ]
       }}
