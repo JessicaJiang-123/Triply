@@ -85,6 +85,7 @@ class CommentImageSerializer(serializers.ModelSerializer):
 class PlaceCommentSerializer(serializers.ModelSerializer):
     images = CommentImageSerializer(many=True, read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = serializers.SerializerMethodField()
 
     class Meta:
         model = PlaceComment
@@ -92,9 +93,16 @@ class PlaceCommentSerializer(serializers.ModelSerializer):
             "id",
             "shared_place",
             "user",
+            "author",
             "text",
             "created_at",
             "images",
         ]
         read_only_fields = ['shared_place', 'user', 'created_at']
+
+    def get_author(self, obj):
+        u = getattr(obj, 'user', None)
+        if not u:
+            return None
+        return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone') }
     
