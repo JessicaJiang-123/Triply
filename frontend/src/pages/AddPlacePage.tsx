@@ -13,6 +13,7 @@ import { SearchBox } from '@mapbox/search-js-react';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import NavigationBar from '../components/NavigationBar';
 import axiosInstance from '../api/axiosInstance';
+import axios from 'axios';
 
 export default function AddPlacePage() {
   const { trip_id, day_id, place_id } = useParams<{
@@ -164,9 +165,14 @@ export default function AddPlacePage() {
       navigate(`/trips/${trip_id}/days/${day_id}`);
     } catch (error) {
       console.error('Failed to add place:', error);
-      setErrorMsg(
-        error instanceof Error ? error.message : 'Failed to add place.'
-      );
+      if (axios.isAxiosError(error) && error.response) {
+        setErrorMsg(
+          error.response.data.detail ||
+            'An error occurred while adding the place.'
+        );
+      } else {
+        setErrorMsg('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

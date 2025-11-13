@@ -8,6 +8,7 @@ import PlaceCard from '../components/PlaceCard';
 import Map from '../components/Map';
 import { useRef } from 'react';
 import type { Place, RouteSegment, Trip } from '../types/tripTypes';
+import axios from 'axios';
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
@@ -31,13 +32,14 @@ export default function PlanDetailPage(): ReactElement {
         setTrip(res.data);
       } catch (err) {
         console.error('Failed to fetch trip', err);
-        const e = err as {
-          response?: { data?: { detail?: string } };
-          message?: string;
-        };
-        setError(
-          e?.response?.data?.detail || e?.message || 'Fetch trip failed'
-        );
+        if (axios.isAxiosError(err) && err.response) {
+          setError(
+            err.response.data.detail ||
+              'Fetch trip details failed'
+          );
+        } else {
+          setError('Fetch trip details failed');
+        }
       }
     };
     fetchTrip();
@@ -59,13 +61,14 @@ export default function PlanDetailPage(): ReactElement {
         setSelectedDayId(Number(day_id));
       } catch (err) {
         console.error('Failed to fetch day places', err);
-        const e = err as {
-          response?: { data?: { detail?: string } };
-          message?: string;
-        };
-        setError(
-          e?.response?.data?.detail || e?.message || 'Fetch places failed'
-        );
+        if (axios.isAxiosError(err) && err.response) {
+          setError(
+            err.response.data.detail ||
+              'Fetch day places failed'
+          );
+        } else {
+          setError('Fetch day places failed');
+        }
       } finally {
         setLoading(false);
       }
@@ -96,13 +99,14 @@ export default function PlanDetailPage(): ReactElement {
       });
     } catch (err) {
       console.error('Delete place failed', err);
-      const e = err as {
-        response?: { data?: { detail?: string } };
-        message?: string;
-      };
-      setError(
-        e?.response?.data?.detail || e?.message || 'Delete place failed'
-      );
+      if (axios.isAxiosError(err) && err.response) {
+        setError(
+          err.response.data.detail ||
+            'Delete place failed'
+        );
+      } else {
+        setError('Delete place failed');
+      }
     }
   }
 
