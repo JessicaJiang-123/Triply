@@ -9,6 +9,7 @@ import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import MapComponent from '../components/MapComponent';
 import { useRef } from 'react';
 import type { Place, RouteSegment, Trip } from '../types/tripTypes';
+import ShareTripModal from '../components/ShareTripModal';
 import axios from 'axios';
 
 export default function PlanDetailPage(): ReactElement {
@@ -22,6 +23,7 @@ export default function PlanDetailPage(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const dateRowRef = useRef<HTMLDivElement | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const navigate = useNavigate();
 
   // fetch trip details to populate date bar
@@ -123,6 +125,10 @@ export default function PlanDetailPage(): ReactElement {
     }
   };
 
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
   /** Determine which routes to show on the map */
   const displayedRoutes =
     selectedRouteId !== null
@@ -213,6 +219,16 @@ export default function PlanDetailPage(): ReactElement {
               }
             >
               <i className="bi bi-caret-right-fill fs-5"></i>
+            </Button>
+            {/* Share Button */}
+            <Button
+              variant="light"
+              size="sm"
+              className="ms-2 d-flex align-items-center justify-content-center"
+              onClick={handleShare}
+              title="Share your travel plan"
+            >
+              <i className="bi bi-share-fill fs-5 text-primary"></i>
             </Button>
           </div>
 
@@ -327,6 +343,13 @@ export default function PlanDetailPage(): ReactElement {
           )}
         </div>
       </div>
+      
+      {/* Share Trip Modal */}
+      <ShareTripModal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        tripId={trip ? trip.id : null}
+      />
     </>
   );
 }
