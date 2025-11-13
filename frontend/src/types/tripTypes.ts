@@ -12,6 +12,7 @@ export type Place = {
   longitude?: number;
   image_url?: string;
   address?: string;
+  mapbox_id?: string;
 };
 
 export type Day = {
@@ -44,4 +45,27 @@ export type RouteSegment = {
   distance_km: number;
   travel_time_min: number;
   coordinates: [number, number][];
+};
+
+export type SharedPlace = {
+  mapbox_id: string;
+  name: string;
+};
+
+export type PlaceComment = {
+  id: number;
+  mapbox_id: string;
+  text: string;
+  created_at: string;
+  author: { id: number; username: string } | null;
+  images?: CommentImage[];
+};
+
+export type CommentImage = {
+  id: number;
+  mapbox_id: string;
+  comment_id: number;
+  image_url: string;
+  created_at: string;
+  uploaded_by?: { id: number; username: string } | null;
 };

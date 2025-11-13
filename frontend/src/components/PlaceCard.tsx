@@ -6,12 +6,14 @@ type PlaceCardProps = {
   name: string;
   address?: string;
   id?: number;
+  mapbox_id?: string;
   notes?: string;
   start_time?: string;
   end_time?: string;
   image_url?: string;
   order?: number;
   onDelete?: (id: number) => void;
+  onPreviewComments?: (mapbox_id: string) => void;
   trip_id?: number;
   day_id?: number;
 };
@@ -28,6 +30,8 @@ export default function PlaceCard({
   onDelete,
   trip_id,
   day_id,
+  mapbox_id,
+  onPreviewComments,
 }: PlaceCardProps): ReactElement {
   const navigate = useNavigate();
 
@@ -56,10 +60,21 @@ export default function PlaceCard({
           <Card.Img
             src={image_url || '/login_bg.jpg'}
             alt={name}
+            role={onPreviewComments ? 'button' : undefined}
+            tabIndex={onPreviewComments ? 0 : undefined}
+            onClick={() =>
+              onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)
+            }
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (!onPreviewComments || !mapbox_id) return;
+              if (e.key === 'Enter' || e.key === ' ')
+                onPreviewComments(mapbox_id);
+            }}
             style={{
               height: 140,
               width: '100%',
               objectFit: 'cover',
+              cursor: onPreviewComments ? 'pointer' : undefined,
             }}
           />
         </Col>
@@ -70,7 +85,21 @@ export default function PlaceCard({
             <div className="d-flex justify-content-between align-items-start mb-2">
               <Card.Title
                 className="mb-0 fw-bold"
-                style={{ fontSize: 18, lineHeight: 1.3 }}
+                role={onPreviewComments ? 'button' : undefined}
+                tabIndex={onPreviewComments ? 0 : undefined}
+                onClick={() =>
+                  onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)
+                }
+                onKeyDown={(e: React.KeyboardEvent) => {
+                  if (!onPreviewComments || !mapbox_id) return;
+                  if (e.key === 'Enter' || e.key === ' ')
+                    onPreviewComments(mapbox_id);
+                }}
+                style={{
+                  cursor: onPreviewComments ? 'pointer' : undefined,
+                  fontSize: 18,
+                  lineHeight: 1.3,
+                }}
               >
                 {order ? `${order}. ` : ''}
                 {name}

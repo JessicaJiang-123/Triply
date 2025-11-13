@@ -5,6 +5,7 @@ import axiosInstance from '../api/axiosInstance';
 import NavigationBar from '../components/NavigationBar';
 import { Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
+import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import Map from '../components/Map';
 import { useRef } from 'react';
 import type { Place, RouteSegment, Trip } from '../types/tripTypes';
@@ -16,6 +17,7 @@ export default function PlanDetailPage(): ReactElement {
   const [places, setPlaces] = useState<Place[]>([]);
   const [routes, setRoutes] = useState<RouteSegment[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [selectedMapboxId, setSelectedMapboxId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dateRowRef = useRef<HTMLDivElement | null>(null);
@@ -56,6 +58,7 @@ export default function PlanDetailPage(): ReactElement {
         setPlaces(fetchedPlaces);
         setRoutes(fetchedRoutes);
         setSelectedDayId(Number(day_id));
+        setSelectedMapboxId(null);
       } catch (err) {
         console.error('Failed to fetch day places', err);
         if (axios.isAxiosError(err) && err.response) {
@@ -220,6 +223,10 @@ export default function PlanDetailPage(): ReactElement {
                     end_time={p.end_time}
                     image_url={p.image_url}
                     id={p.id}
+                    mapbox_id={p.mapbox_id}
+                    onPreviewComments={(mbid: string) =>
+                      setSelectedMapboxId(mbid)
+                    }
                     onDelete={handleDeletePlace}
                     trip_id={trip.id}
                     day_id={Number(day_id)}
@@ -278,20 +285,33 @@ export default function PlanDetailPage(): ReactElement {
           </div>
         </div>
 
-        {/* Right Column — Map or future content */}
+        {/* Right Column — Comment panel only */}
         <div
           style={{
             flexGrow: 1,
             backgroundColor: '#fafafa',
             overflow: 'hidden', // keep right pane static
+            display: 'flex',
           }}
         >
           {/* Map / Place Detail */}
-          <Map
-            places={places}
-            center={[trip.longitude, trip.latitude]}
-            routes={displayedRoutes}
-          />
+          {selectedMapboxId ? (
+            <div style={{ flex: 1, padding: 16 }}>
+              <PlaceCommentPanel
+                mapboxId={selectedMapboxId}
+                placeName={
+                  places.find((p) => p.mapbox_id === selectedMapboxId)?.name || ''
+                }
+                onClose={() => setSelectedMapboxId(null)}
+              />
+            </div>
+          ) : (
+            <Map
+              places={places}
+              center={[trip.longitude, trip.latitude]}
+              routes={displayedRoutes}
+            />
+          )}
         </div>
       </div>
     </>

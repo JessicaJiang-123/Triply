@@ -4,7 +4,7 @@ from django.db import models as dj_models
 from django.db.models import F
 from rest_framework import status
 from rest_framework.response import Response
-from .models import Place, RouteSegment
+from .models import Place, RouteSegment, SharedPlace
 from .serializers import PlaceSerializer
 from .utils.fetch_image import fetch_image_url
 from .utils.convert_coordinate import get_coordinate_from_address
@@ -14,6 +14,11 @@ def create_place_for_day(data, day_obj):
     """
     Create a new Place for the given Day, adjusting orders and route segments as needed.
     """
+    # check if mapbox_id is provided
+    mapbox_id = data.get('mapbox_id', None)
+    if not mapbox_id:
+        return Response({"detail": "mapbox_id is required for a place."}, status=status.HTTP_400_BAD_REQUEST)
+
     start_time_str = data.get('start_time') or None
     new_start = None
     if start_time_str:
@@ -105,12 +110,30 @@ def create_place_for_day(data, day_obj):
                 coordinates=route_data['coordinates']
             )
 
+    # link (or create) the SharedPlace if mapbox_id is provided
+    if mapbox_id:
+        shared_place, _ = SharedPlace.objects.get_or_create(
+            mapbox_id=mapbox_id,
+            defaults={
+                'name': place.name or '' # type: ignore
+            }
+        )
+        place.shared_place = shared_place # type: ignore
+        place.mapbox_id = mapbox_id # type: ignore
+        place.save() # type: ignore
+        place.refresh_from_db() # type: ignore
+
     return Response(PlaceSerializer(place).data, status=status.HTTP_201_CREATED)
 
 def update_place_for_day(data, day_obj, place_id):
     """
     Update an existing Place for the given Day, adjusting orders and route segments as needed.
     """
+    # check if mapbox_id is provided
+    new_mapbox_id = data.get('mapbox_id', None)
+    if not new_mapbox_id:
+        return Response({"detail": "mapbox_id is required for a place."}, status=status.HTTP_400_BAD_REQUEST)
+
     place = get_object_or_404(Place, pk=place_id, day=day_obj)
 
     # Track whether name or image is updated
@@ -194,6 +217,21 @@ def update_place_for_day(data, day_obj, place_id):
                         'coordinates': route_data['coordinates']
                     }
                 )
+
+    # If mapbox_id provided and changed, update shared_place accordingly
+    if new_mapbox_id:
+        if place.mapbox_id != new_mapbox_id:
+            # Rebind to the new SharedPlace
+            shared_place, _ = SharedPlace.objects.get_or_create(
+                mapbox_id=new_mapbox_id,
+                defaults={
+                    'name': data.get('name', place.name) or ''
+                }
+            )
+            place.shared_place = shared_place # type: ignore
+            place.mapbox_id = new_mapbox_id
+            place.save() # type: ignore
+            place.refresh_from_db() # type: ignore
 
     serializer = PlaceSerializer(place)
     return Response(serializer.data, status=status.HTTP_200_OK)

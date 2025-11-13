@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Trip, Day, Place, RouteSegment
+from .models import Trip, Day, Place, RouteSegment, PlaceComment, CommentImage
+
 
 class RouteSegmentSerializer(serializers.ModelSerializer):
     from_place_name = serializers.CharField(source='from_place.name', read_only=True)
@@ -24,6 +25,7 @@ class PlaceSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "day",
+            "mapbox_id",
             "name",
             "category",
             "start_time",
@@ -103,3 +105,42 @@ class TripSerializer(serializers.ModelSerializer):
     def get_firstDayId(self, obj):
         first_day = obj.days.order_by('order').first()
         return first_day.id if first_day else None
+
+
+class CommentImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommentImage
+        fields = [
+            "id",
+            "comment",
+            "user",
+            "image_url",
+            "created_at",
+        ]
+        read_only_fields = ['comment', 'user', 'created_at']
+
+
+class PlaceCommentSerializer(serializers.ModelSerializer):
+    images = CommentImageSerializer(many=True, read_only=True)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PlaceComment
+        fields = [
+            "id",
+            "shared_place",
+            "user",
+            "author",
+            "text",
+            "created_at",
+            "images",
+        ]
+        read_only_fields = ['shared_place', 'user', 'created_at']
+
+    def get_author(self, obj):
+        u = getattr(obj, 'user', None)
+        if not u:
+            return None
+        return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone') }
+    

@@ -2,8 +2,10 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
+
 class Trip(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trips')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='trips')
     name = models.CharField(max_length=100)
     destination_city = models.CharField(max_length=100)
     latitude = models.FloatField(null=True, blank=True) # latitude of destination city
@@ -19,7 +21,8 @@ class Trip(models.Model):
 
 
 class Day(models.Model):
-    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='days')
+    trip = models.ForeignKey(
+        Trip, on_delete=models.CASCADE, related_name='days')
     date = models.DateField()
     order = models.PositiveIntegerField()
 
@@ -33,8 +36,26 @@ class Day(models.Model):
         return f"Day {self.order} of {self.trip} - {self.date}"
 
 
+class SharedPlace(models.Model):
+    """Canonical/shared place feature (Mapbox feature).
+
+    A mapbox_id uniquely identifies a Mapbox feature.
+    """
+    mapbox_id = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"SharedPlace {self.name or self.mapbox_id}"
+
+
 class Place(models.Model):
-    day = models.ForeignKey(Day, on_delete=models.CASCADE, related_name='places')
+    day = models.ForeignKey(
+        Day, on_delete=models.CASCADE, related_name='places')
+    # Mapbox feature identifier
+    mapbox_id = models.CharField(max_length=255, blank=True)
+    # Bind to the canonical SharedPlace
+    shared_place = models.ForeignKey(
+        'SharedPlace', on_delete=models.SET_NULL, null=True, blank=True, related_name='user_places')
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=50, blank=True, null=True)
     start_time = models.TimeField()
@@ -69,3 +90,39 @@ class RouteSegment(models.Model):
 
     def __str__(self):
         return f"{self.from_place.name} -> {self.to_place.name}"
+
+
+class PlaceComment(models.Model):
+    """User comments bound to a SharedPlace (canonical Mapbox feature).
+
+    Storing comments on the SharedPlace makes them visible across different
+    users' `Place` instances that point to the same Mapbox feature.
+    """
+    shared_place = models.ForeignKey(
+        'SharedPlace', on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='place_comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.shared_place}"
+
+
+class CommentImage(models.Model):
+    """Images attached to a PlaceComment. One comment can have many images."""
+    comment = models.ForeignKey(
+        'PlaceComment', on_delete=models.CASCADE, related_name='images')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,
+                             null=True, blank=True, related_name='comment_images')
+    image_url = models.URLField(max_length=1024)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Image for comment {self.comment.id} ({self.image_url})"
