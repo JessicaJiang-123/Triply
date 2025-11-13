@@ -42,6 +42,15 @@ class PlaceSerializer(serializers.ModelSerializer):
             'order': {'required': False}
         }
 
+    def validate(self, data):
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+
+        if start_time and end_time and start_time > end_time:
+            raise serializers.ValidationError("start_time must <= end_time.")
+
+        return data
+
 
 class DaySerializer(serializers.ModelSerializer):
     places = PlaceSerializer(many=True, read_only=True)
@@ -81,6 +90,15 @@ class TripSerializer(serializers.ModelSerializer):
             "image_url",
             "firstDayId",
         ]
+
+    def validate(self, data):
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError("start_date must be <= end_date.")
+
+        return data
 
     def get_firstDayId(self, obj):
         first_day = obj.days.order_by('order').first()
