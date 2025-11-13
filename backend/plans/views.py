@@ -402,8 +402,7 @@ class PlaceCommentAPIView(APIView):
 class UploadCommentImageAPIView(APIView):
     """Accept multipart file uploads for comment images and return serialized image records.
 
-    Expects files under the 'images' field. Optionally accepts 'comment_id' to attach to an existing
-    comment, or 'mapbox_id' to create a new empty comment for the shared place and attach images to it.
+    Expects files under the 'images' field.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -432,7 +431,7 @@ class UploadCommentImageAPIView(APIView):
 
         urls = []
         # cap a reasonable number per request
-        MAX_FILES = 5
+        MAX_FILES = 3
         MAX_SIZE = 5 * 1024 * 1024  # 5MB
         for f in files[:MAX_FILES]:
             # server-side validations: mime and size
