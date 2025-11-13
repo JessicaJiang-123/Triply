@@ -56,7 +56,7 @@ def create_place_for_day(data, day_obj):
     serializer = PlaceSerializer(data=data)
     if not serializer.is_valid():
         print(f"ERROR: PlaceSerializer validation failed. Details: {serializer.errors}")
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Invalid place data."}, status=status.HTTP_400_BAD_REQUEST)
         
     place = serializer.save(day=day_obj, order=assign_order)
 
