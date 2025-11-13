@@ -14,8 +14,8 @@ import Select from 'react-select';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
-import { fetchPlaceImage } from '../utils/fetchPlaceImage';
 import type { Trip } from '../types/tripTypes';
+import axios from 'axios';
 
 export default function AddTripPage() {
   const [formData, setFormData] = useState({
@@ -84,12 +84,36 @@ export default function AddTripPage() {
     setFormData((prev) => ({ ...prev, preferences: selectedValues }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submission for both manual and AI modes
+  const handleSubmit = async (
+    e: React.FormEvent,
+    mode: 'manual' | 'ai' = 'manual'
+  ) => {
     e.preventDefault();
+
+    setErrorMsg(null);
+
+    // Validate trip name (not empty)
+    if (!formData.name.trim()) {
+      setErrorMsg('Trip title is required.');
+      return;
+    }
 
     // Validate destination city (not empty)
     if (!formData.destination_city.trim()) {
       setIsCityInvalid(true);
+      return;
+    }
+
+    // Validate start date
+    if (!formData.start_date) {
+      setErrorMsg('Start date is required.');
+      return;
+    }
+
+    // Validate end date
+    if (!formData.end_date) {
+      setErrorMsg('End date is required.');
       return;
     }
 
@@ -99,18 +123,23 @@ export default function AddTripPage() {
       return;
     }
 
-    setSubmitting(true);
+    // start submitting states
+    if (mode === 'manual') {
+      setSubmitting(true);
+      setIsAiSubmitting(false);
+    } else {
+      setIsAiSubmitting(true);
+      setSubmitting(false);
+    }
 
     try {
-      // Fetch image URL based on destination city
-      const imageUrl = await fetchPlaceImage(
-        formData.destination_city.split(',')[0]
-      );
-      console.log('Fetched image URL:', imageUrl);
-
-      const payload = { ...formData, image_url: imageUrl };
+      const payload = { ...formData };
       console.log('Submitting trip data:', payload);
-      const response = await axiosInstance.post('/api/plans/trips/', payload);
+
+      const endpoint =
+        mode === 'ai' ? '/api/plans/generate-ai-plan/' : '/api/plans/trips/';
+
+      const response = await axiosInstance.post(endpoint, payload);
       console.log('Trip created:', response.data);
 
       const newTrip: Trip = response.data;
@@ -127,59 +156,16 @@ export default function AddTripPage() {
       }
     } catch (error) {
       console.error('Failed to create trip:', error);
-      setErrorMsg(
-        error instanceof Error ? error.message : 'Failed to create trip.'
-      );
+      if (axios.isAxiosError(error) && error.response) {
+        setErrorMsg(
+          error.response.data.detail ||
+            'An error occurred while creating the trip.'
+        );
+      } else {
+        setErrorMsg('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  // Handle AI-generated trip plan submission
-  const handleAIGenerate = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    
-    // same as handleSubmit validations
-    e.preventDefault();
-    setErrorMsg(null);
-
-    // Validate destination city (not empty)
-    if (!formData.destination_city.trim()) {
-      setIsCityInvalid(true);
-      return;
-    }
-
-    // Validate dates
-    if (new Date(formData.end_date) < new Date(formData.start_date)) {
-      setErrorMsg('End date cannot be earlier than start date.');
-      return;
-    }
-
-    setIsAiSubmitting(true);
-
-    try {
-      // call AI plan generation endpoint
-      const response = await axiosInstance.post(
-        '/api/plans/generate-ai-plan/',
-        formData
-      );
-
-      // {"trip_id": ..., "first_day_id": ...}
-      const { trip_id, first_day_id } = response.data;
-
-      if (first_day_id && trip_id) {
-        // Navigate to PlanDetailPage
-        navigate(`/trips/${trip_id}/days/${first_day_id}`);
-      } else {
-        console.error('AI response is missing data.');
-        navigate('/trips');
-      }
-    } catch (error) {
-      // same as handleSubmit error handling
-      console.error('Failed to generate AI trip:', error);
-      setErrorMsg(
-        error instanceof Error ? error.message : 'Failed to generate trip.'
-      );
-    } finally {
       setIsAiSubmitting(false);
     }
   };
@@ -297,7 +283,7 @@ export default function AddTripPage() {
                 <Button
                   variant="outline-primary"
                   type="button"
-                  onClick={handleAIGenerate}
+                  onClick={(e) => handleSubmit(e, 'ai')}
                   disabled={submitting || isAiSubmitting}
                   className="px-4"
                 >

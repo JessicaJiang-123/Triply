@@ -6,11 +6,13 @@ class Trip(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trips')
     name = models.CharField(max_length=100)
     destination_city = models.CharField(max_length=100)
+    latitude = models.FloatField(null=True, blank=True) # latitude of destination city
+    longitude = models.FloatField(null=True, blank=True) # longitude of destination city
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    image_url = models.URLField(max_length=1024, blank=True, null=True)
+    image_url = models.CharField(max_length=1024, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.user})"
@@ -34,22 +36,18 @@ class Day(models.Model):
 class Place(models.Model):
     day = models.ForeignKey(Day, on_delete=models.CASCADE, related_name='places')
     name = models.CharField(max_length=200)
-    category = models.CharField(max_length=50, blank=True)
-    start_time = models.TimeField(null=True, blank=True)
-    end_time = models.TimeField(null=True, blank=True)
+    category = models.CharField(max_length=50, blank=True, null=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
     notes = models.CharField(max_length=200, blank=True)
     order = models.PositiveIntegerField()
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     description = models.TextField(blank=True)
-    image_url = models.URLField(max_length=1024, blank=True)
+    image_url = models.CharField(max_length=1024, blank=True, null=True)
     address = models.CharField(max_length=512, blank=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['day', 'order'], name='unique_place_order_per_day')
-        ]
         ordering = ['order']
 
     def __str__(self):
@@ -57,7 +55,17 @@ class Place(models.Model):
 
 
 class RouteSegment(models.Model):
+    route_id = models.CharField(max_length=100) # e.g., route-<place1_id>-<place2_id>
     from_place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='segment_from')
     to_place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='segment_to')
-    distance_km = models.FloatField()
-    travel_time_min = models.FloatField()
+    distance_km = models.FloatField(null=True, blank=True)
+    travel_time_min = models.FloatField(null=True, blank=True)
+    coordinates = models.JSONField(null=True, blank=True)  # Store GeoJSON coordinate array
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('from_place', 'to_place')
+        ordering = ['from_place__order']
+
+    def __str__(self):
+        return f"{self.from_place.name} -> {self.to_place.name}"

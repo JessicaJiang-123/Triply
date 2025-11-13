@@ -1,16 +1,21 @@
+import json
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db import models as dj_models
+from rest_framework.test import APIRequestFactory
 from django.db import transaction
 from django.db.models import F
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from rest_framework.decorators import action
-from .models import Trip, Day, Place
+from .models import RouteSegment, Trip, Day, Place
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer
 from . import ai_planner
+from .utils.fetch_image import fetch_image_url
+from .utils.convert_coordinate import get_coordinate_from_address
+from .utils.fetch_route_between_points import fetch_route_between_points
+from .place_ops import create_place_for_day, update_place_for_day
 
 # Owner-only retrieve view
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -39,7 +44,24 @@ class TripViewSet(viewsets.ModelViewSet):
         return Trip.objects.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
-        trip = serializer.save(user=self.request.user)
+        data = getattr(self.request, "data", {})
+
+        destination_city = data.get('destination_city', '').strip()
+        main_city_name = destination_city.split(',')[0].strip() if destination_city else ''
+
+        # Fetch image URL based on destination city name
+        image_url = fetch_image_url(main_city_name)
+
+        # Fetch coordinates based on destination city
+        longitude, latitude = get_coordinate_from_address(destination_city)
+
+        # Save the trip
+        trip = serializer.save(
+            user=self.request.user,
+            image_url=image_url,
+            latitude=latitude,
+            longitude=longitude
+        )
         current_date = trip.start_date
         order = 1
         while current_date <= trip.end_date:
@@ -55,7 +77,7 @@ class TripViewSet(viewsets.ModelViewSet):
     def share_trip(self, request, pk=None):
         trip = self.get_object()
         
-        return Response({'message': 'Sharing endpoint not implemented yet.'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        return Response({'detail': 'Sharing endpoint not implemented yet.'}, status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
 class PlanDetailAPIView(generics.RetrieveAPIView):
@@ -105,6 +127,7 @@ class PlaceForDayAPIView(APIView):
 
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
+    @transaction.atomic
     def post(self, request, trip_id, day_id, place_id=None):
         """
         Create a new place for the specified day, or update an existing place
@@ -116,81 +139,17 @@ class PlaceForDayAPIView(APIView):
 
         day_obj = get_object_or_404(Day, pk=day_id, trip=trip)
 
+        # validate request data
+        serializer = PlaceSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"detail": "Invalid place data."}, status=status.HTTP_400_BAD_REQUEST)
+
         # If place_id is provided -> UPDATE instead of CREATE
         if place_id:
-            return self._update_place(request, trip, day_obj, place_id)
+            return update_place_for_day(request.data.copy(), day_obj, place_id)
         else:
-            return self._create_place(request, day_obj)
-        
-    def _create_place(self, request, day_obj):
-        data = request.data.copy()
+            return create_place_for_day(request.data.copy(), day_obj)
 
-        start_time_str = data.get('start_time') or None
-        new_start = None
-        if start_time_str:
-            try:
-                new_start = datetime.fromisoformat(start_time_str).time()
-            except Exception:
-                try:
-                    new_start = datetime.strptime(start_time_str, '%H:%M').time()
-                except Exception:
-                    new_start = None
-
-        max_order = (Place.objects.filter(day=day_obj)
-                     .aggregate(dj_models.Max('order'))['order__max'] or 0)
-
-        if new_start is None:
-            assign_order = max_order + 1
-        else:
-            # find insertion order
-            insertion_order = max_order + 1
-            for p in Place.objects.filter(day=day_obj).order_by('order'):
-                if p.start_time and new_start and p.start_time > new_start:
-                    insertion_order = p.order
-                    break
-
-            if insertion_order <= max_order:
-                with transaction.atomic():
-                    Place.objects.filter(day=day_obj, order__gte=insertion_order).update(
-                        order=F('order') + 1)
-            assign_order = insertion_order
-        
-        serializer = PlaceSerializer(data=data)
-        if not serializer.is_valid():
-             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        with transaction.atomic():
-            if assign_order <= max_order:
-                Place.objects.filter(day=day_obj, order__gte=assign_order).update(
-                    order=F('order') + 1)
-            
-            place = serializer.save(day=day_obj, order=assign_order)
-
-        return Response(PlaceSerializer(place).data, status=status.HTTP_201_CREATED)
-    
-    def _update_place(self, request, trip, day_obj, place_id):
-        place = get_object_or_404(Place, pk=place_id, day=day_obj)
-
-        data = request.data
-        # update mutable fields
-        for field in [
-            "name",
-            "address",
-            "start_time",
-            "end_time",
-            "notes",
-            "image_url",
-            "latitude",
-            "longitude",
-            "category",
-        ]:
-            if field in data:
-                setattr(place, field, data[field])
-
-        place.save()
-        serializer = PlaceSerializer(place)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
     def get(self, request, trip_id, day_id, place_id):
         """
         Retrieve a specific place for the specified day
@@ -206,6 +165,7 @@ class PlaceForDayAPIView(APIView):
         serializer = PlaceSerializer(place)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def delete(self, request, trip_id, day_id, place_id):
         """
         Delete a specific place for the specified day
@@ -221,12 +181,47 @@ class PlaceForDayAPIView(APIView):
 
         deleted_order = place.order
 
-        # Perform delete and reorder in a transaction to keep orders contiguous
-        with transaction.atomic():
-            place.delete()
-            # Decrement order for all places in the same day that were after the deleted one
-            Place.objects.filter(day=day_obj, order__gt=deleted_order).update(
-                order=F('order') - 1)
+        prev_place = (
+            Place.objects.filter(day=day_obj, order=deleted_order - 1).first()
+        )
+        next_place = (
+            Place.objects.filter(day=day_obj, order=deleted_order + 1).first()
+        )
+
+        # if deleting from the middle, remove old route segments involving this place
+        if prev_place:
+            RouteSegment.objects.filter(
+                from_place=prev_place,
+                to_place=place
+            ).delete()
+
+        if next_place:
+            RouteSegment.objects.filter(
+                from_place=place,
+                to_place=next_place
+            ).delete()
+
+        # if prev and next exist, create new route segment between them
+        if prev_place and next_place:
+            route_data = fetch_route_between_points(
+                [prev_place.longitude, prev_place.latitude],
+                [next_place.longitude, next_place.latitude]
+            )
+            if route_data:
+                RouteSegment.objects.create(
+                    route_id=f"route-{prev_place.id}-{next_place.id}", # type: ignore
+                    from_place=prev_place,
+                    to_place=next_place,
+                    distance_km=route_data['distance'] / 1000.0,
+                    travel_time_min=route_data['duration'] / 60.0,
+                    coordinates=route_data['coordinates']
+                )
+
+        place.delete()
+
+        # reorder remaining places
+        Place.objects.filter(day=day_obj, order__gt=deleted_order).update(
+            order=F('order') - 1)
 
         # After reordering, return the current list of places for this day so frontend
         # can refresh only the day's content.
@@ -242,7 +237,7 @@ class AIGeneratePlanView(APIView):
     POST: /api/plans/generate-ai-plan/
     """
     
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     @transaction.atomic
     def post(self, request):
@@ -250,8 +245,6 @@ class AIGeneratePlanView(APIView):
         Receives trip data from AddTripPage, creates Trip/Days,
         calls AI Planner, and creates Places.
         """
-        
-        # get data from frontend (AddTripPage)
         try:
             trip_name = request.data['name']
             destination_city = request.data['destination_city']
@@ -276,76 +269,97 @@ class AIGeneratePlanView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # create trip and day objects based on models.py
-        try:
-            # Trip object (ignore image_url for now)
-            new_trip = Trip.objects.create(
-                user=request.user,
-                name=trip_name,
-                destination_city=destination_city,
-                start_date=start_date,
-                end_date=end_date
-            )
+        ## Create Trip and Days using TripViewSet ###
 
-            # Day objects
-            days_list = []
-            current_date = start_date
-            for i in range(num_days):
-                new_day = Day.objects.create(
-                    trip=new_trip,
-                    date=current_date,
-                    order=i + 1
-                )
-                days_list.append(new_day)
-                current_date += timedelta(days=1)
-            
-            # call AI planner to get place recommendations
-            recommendations = ai_planner.generate_trip_recommendations(
-                trip_name, destination_city, preferences, num_days
-            )
-            
-            if recommendations is None:
-                raise Exception("AI planner failed to return recommendations.")
+        factory = APIRequestFactory()
 
-            for day_plan in recommendations:
-                # (e.g., day_plan = { "day": 1, "places": [...] })
-                day_number = day_plan.get('day')
-                day_index = day_number - 1
-                
-                if 0 <= day_index < len(days_list):
-                    current_day_object = days_list[day_index]
-                    
-                    ai_places_list = day_plan.get('places', [])
-                    for order_index, place_data in enumerate(ai_places_list):
-                        # (e.g., place_data = { "name": "...", "address": "..." })
-                        
-                        # Place objects (ignore image_url for now)
-                        Place.objects.create(
-                            day=current_day_object,
-                            order=order_index + 1,
-                            
-                            name=place_data.get('name'),
-                            address=place_data.get('address', ''),
-                            category=place_data.get('category', ''),
-                            start_time=place_data.get('start_time'),
-                            end_time=place_data.get('end_time'),
-                            notes=place_data.get('notes', '')
-                        )
-
-
-            first_day_id = days_list[0].id if days_list else None
-            
-            return Response(
-                {
-                    "trip_id": new_trip.pk,
-                    "first_day_id": first_day_id
-                },
-                status=status.HTTP_201_CREATED
-            )
+        trip_create_request = factory.post(
+            "/api/plans/trips/",
+            {
+                "name": request.data['name'],
+                "destination_city": request.data['destination_city'],
+                "start_date": request.data["start_date"],
+                "end_date": request.data["end_date"],
+            },
+            format="json"
+        )
+        trip_create_request.user = request.user
         
-        except Exception as e:
-            print(f"ERROR: Failed during AI plan creation: {e}")
+        trip_create_view = TripViewSet.as_view({'post': 'create'})
+        trip_response = trip_create_view(trip_create_request)
+
+        if trip_response.status_code != status.HTTP_201_CREATED:
             return Response(
-                {"detail": f"An error occurred while generating the AI plan: {e}"},
+                {"detail": "Failed to create trip."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+        trip_id = trip_response.data.get('id')
+
+        # load created trip object from DB
+        trip = Trip.objects.get(id=trip_id)
+
+        # load created days
+        days = list(trip.days.order_by('order')) # type: ignore
+
+        # call AI planner to get place recommendations
+        recommendations = ai_planner.generate_trip_recommendations(
+            trip_name, destination_city, preferences, num_days
+        )
+
+        if recommendations is None:
+            # AI planner not available, delete created trip and days
+            trip.delete()
+
+            return Response(
+                {"detail": "AI planner is busy or not available now, please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        print("AI Recommendations:", json.dumps(recommendations, indent=2))
+        
+        ### Create Places using PlaceForDayAPIView ###
+        place_view = PlaceForDayAPIView.as_view()
+
+        for day_plan in recommendations:
+            day_number = day_plan.get('day', None)
+            if not day_number:
+                continue
+
+            day_index = day_number - 1
+            if not (0 <= day_index < len(days)):
+                continue
+
+            print(f"Processing day {day_number} with day_id={days[day_index].id}")
+
+            day_obj = days[day_index]
+
+            day_plan_places = day_plan.get('places', [])
+            print(f"  Number of places to add: {len(day_plan_places)}")
+
+            for place_info in day_plan_places:
+                print(f"    Adding place: {place_info.get('name', 'N/A')}")
+                place_request = factory.post(
+                    f"/api/plans/trips/{trip_id}/days/{day_obj.id}/places/",
+                    place_info,
+                    format="json"
+                )
+                place_request.user = request.user
+
+                place_response = place_view(
+                    place_request,
+                    trip_id=trip_id,
+                    day_id=day_obj.id
+                )
+
+                if place_response.status_code not in [status.HTTP_200_OK, status.HTTP_201_CREATED]:
+                    print("[Skipped] Warning: Failed to create place via AI planner:", json.dumps(place_info, indent=2))
+                    print("  Error response:", place_response.data) # type: ignore
+                    continue
+                
+        serializer = TripSerializer(trip)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
