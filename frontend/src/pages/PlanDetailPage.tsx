@@ -6,13 +6,17 @@ import NavigationBar from '../components/NavigationBar';
 import { Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
 import PlaceCommentPanel from '../components/PlaceCommentPanel';
+import Map from '../components/Map';
 import { useRef } from 'react';
-import type { Place, Trip } from '../types/tripTypes';
+import type { Place, RouteSegment, Trip } from '../types/tripTypes';
+import axios from 'axios';
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
+  const [routes, setRoutes] = useState<RouteSegment[]>([]);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [selectedMapboxId, setSelectedMapboxId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +34,11 @@ export default function PlanDetailPage(): ReactElement {
         setTrip(res.data);
       } catch (err) {
         console.error('Failed to fetch trip', err);
-        const e = err as {
-          response?: { data?: { detail?: string } };
-          message?: string;
-        };
-        setError(
-          e?.response?.data?.detail || e?.message || 'Fetch trip failed'
-        );
+        if (axios.isAxiosError(err) && err.response) {
+          setError(err.response.data.detail || 'Fetch trip details failed');
+        } else {
+          setError('Fetch trip details failed');
+        }
       }
     };
     fetchTrip();
@@ -51,17 +53,19 @@ export default function PlanDetailPage(): ReactElement {
           `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
         console.log('Fetched places for day', res.data);
-        setPlaces(res.data.places || []);
+        const fetchedPlaces: Place[] = res.data.places || [];
+        const fetchedRoutes: RouteSegment[] = res.data.routes || [];
+        setPlaces(fetchedPlaces);
+        setRoutes(fetchedRoutes);
         setSelectedDayId(Number(day_id));
+        setSelectedMapboxId(null);
       } catch (err) {
         console.error('Failed to fetch day places', err);
-        const e = err as {
-          response?: { data?: { detail?: string } };
-          message?: string;
-        };
-        setError(
-          e?.response?.data?.detail || e?.message || 'Fetch places failed'
-        );
+        if (axios.isAxiosError(err) && err.response) {
+          setError(err.response.data.detail || 'Fetch day places failed');
+        } else {
+          setError('Fetch day places failed');
+        }
       } finally {
         setLoading(false);
       }
@@ -92,13 +96,11 @@ export default function PlanDetailPage(): ReactElement {
       });
     } catch (err) {
       console.error('Delete place failed', err);
-      const e = err as {
-        response?: { data?: { detail?: string } };
-        message?: string;
-      };
-      setError(
-        e?.response?.data?.detail || e?.message || 'Delete place failed'
-      );
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.detail || 'Delete place failed');
+      } else {
+        setError('Delete place failed');
+      }
     }
   }
 
@@ -108,6 +110,14 @@ export default function PlanDetailPage(): ReactElement {
       navigate(`/trips/${trip_id}/days/${selectedDayId}/add-place`);
     }
   };
+
+  /** Determine which routes to show on the map */
+  const displayedRoutes =
+    selectedRouteId !== null
+      ? routes
+          .filter((r) => r.route_id === selectedRouteId)
+          .map((r) => r.coordinates)
+      : routes.map((r) => r.coordinates);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -202,23 +212,52 @@ export default function PlanDetailPage(): ReactElement {
             }}
           >
             {places.length > 0 ? (
-              places.map((p) => (
-                <PlaceCard
-                  key={p.id}
-                  order={p.order}
-                  name={p.name}
-                  address={p.address || ''}
-                  notes={p.notes}
-                  start_time={p.start_time}
-                  end_time={p.end_time}
-                  image_url={p.image_url}
-                  id={p.id}
-                  mapbox_id={p.mapbox_id}
-                  onPreviewComments={(mbid: string) => setSelectedMapboxId(mbid)}
-                  onDelete={handleDeletePlace}
-                  trip_id={trip.id}
-                  day_id={Number(day_id)}
-                />
+              places.map((p, index) => (
+                <div key={p.id} style={{ marginBottom: '1rem' }}>
+                  <PlaceCard
+                    order={p.order}
+                    name={p.name}
+                    address={p.address || ''}
+                    notes={p.notes}
+                    start_time={p.start_time}
+                    end_time={p.end_time}
+                    image_url={p.image_url}
+                    id={p.id}
+                    mapbox_id={p.mapbox_id}
+                    onPreviewComments={(mbid: string) =>
+                      setSelectedMapboxId(mbid)
+                    }
+                    onDelete={handleDeletePlace}
+                    trip_id={trip.id}
+                    day_id={Number(day_id)}
+                  />
+                  {/* Clickable distance + duration line */}
+                  {index < routes.length && (
+                    <div
+                      onClick={() =>
+                        setSelectedRouteId((prev) =>
+                          prev === routes[index].route_id
+                            ? null
+                            : routes[index].route_id
+                        )
+                      }
+                      className={`text-center small my-2 py-1 rounded ${
+                        selectedRouteId === routes[index].route_id
+                          ? 'border border-primary'
+                          : 'border border-transparent text-muted'
+                      }`}
+                      style={{
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <i className="bi bi-arrow-down-short me-1"></i>
+                      {routes[index].distance_km.toFixed(1)} km ·{' '}
+                      {Math.round(routes[index].travel_time_min)} min
+                      <i className="bi bi-car-front-fill ms-2 text-secondary"></i>
+                    </div>
+                  )}
+                </div>
               ))
             ) : (
               <div className="text-center text-muted mt-5">
@@ -251,25 +290,28 @@ export default function PlanDetailPage(): ReactElement {
           style={{
             flexGrow: 1,
             backgroundColor: '#fafafa',
-            overflow: 'hidden',
+            overflow: 'hidden', // keep right pane static
             display: 'flex',
           }}
         >
-          <div style={{ flex: 1, padding: 16 }}>
-            {(() => {
-              const selected = places.find((p) => p.mapbox_id === selectedMapboxId);
-              const mapboxId = selected?.mapbox_id || null;
-              const placeName = selected?.name || '';
-              if (!mapboxId) {
-                return (
-                  <div className="d-flex align-items-center justify-content-center text-muted" style={{ width: '100%', height: '100%' }}>
-                    Select a place to view comments
-                  </div>
-                );
-              }
-              return <PlaceCommentPanel mapboxId={mapboxId} placeName={placeName} onClose={() => setSelectedMapboxId(null)} />;
-            })()}
-          </div>
+          {/* Map / Place Detail */}
+          {selectedMapboxId ? (
+            <div style={{ flex: 1, padding: 16 }}>
+              <PlaceCommentPanel
+                mapboxId={selectedMapboxId}
+                placeName={
+                  places.find((p) => p.mapbox_id === selectedMapboxId)?.name || ''
+                }
+                onClose={() => setSelectedMapboxId(null)}
+              />
+            </div>
+          ) : (
+            <Map
+              places={places}
+              center={[trip.longitude, trip.latitude]}
+              routes={displayedRoutes}
+            />
+          )}
         </div>
       </div>
     </>

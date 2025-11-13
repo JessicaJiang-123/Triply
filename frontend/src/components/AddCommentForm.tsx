@@ -89,7 +89,11 @@ export default function AddCommentForm({
       const urls = imgs
         .map((i: unknown) => {
           if (typeof i === 'string') return i;
-          if (i && typeof i === 'object' && 'image_url' in (i as Record<string, unknown>)) {
+          if (
+            i &&
+            typeof i === 'object' &&
+            'image_url' in (i as Record<string, unknown>)
+          ) {
             const obj = i as Record<string, unknown>;
             const v = obj['image_url'];
             return typeof v === 'string' ? v : undefined;
@@ -163,7 +167,9 @@ export default function AddCommentForm({
                 className="btn-close"
                 aria-label={`Remove image ${idx + 1}`}
                 style={{ position: 'absolute', top: 4, right: 4 }}
-                onClick={() => setImageUrls((s) => s.filter((_, i) => i !== idx))}
+                onClick={() =>
+                  setImageUrls((s) => s.filter((_, i) => i !== idx))
+                }
               />
             </div>
           ))}

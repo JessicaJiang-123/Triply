@@ -1,12 +1,17 @@
 import { Card } from 'react-bootstrap';
-import type { ReactElement } from 'react';
+import { useContext, type ReactElement } from 'react';
 import type { CommentImage, PlaceComment } from '../types/tripTypes';
+import { AuthContext } from '../context/AuthContext';
 
 type CommentCardProps = {
   comment: PlaceComment;
 };
 
-export default function CommentCard({ comment }: CommentCardProps): ReactElement {
+export default function CommentCard({
+  comment,
+}: CommentCardProps): ReactElement {
+  const { currentUser } = useContext(AuthContext);
+  
   const authorName = comment.author?.username ?? 'Someone';
   const text = comment.text;
   const createdAt = comment.created_at;
@@ -17,7 +22,11 @@ export default function CommentCard({ comment }: CommentCardProps): ReactElement
   try {
     const d = new Date(createdAt);
     if (!Number.isNaN(d.getTime())) {
-      dateLabel = d.toLocaleDateString(undefined, { year: 'numeric', month: 'numeric', day: 'numeric' });
+      dateLabel = d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      });
     }
   } catch {
     // leave createdAt as-is
@@ -27,13 +36,13 @@ export default function CommentCard({ comment }: CommentCardProps): ReactElement
       <Card.Body>
         {/* Header: avatar + author name */}
         <div className="d-flex align-items-start mb-2">
-          {/* simple avatar: initial in circle */}
+          {/* avatar: use currentUser picture if available */}
           <div
             className="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3"
             style={{ width: 40, height: 40, flex: '0 0 auto' }}
             aria-hidden
           >
-            <span style={{ fontWeight: 600 }}>{authorName?.charAt(0) ?? '?'}</span>
+            <img src={currentUser?.picture} alt="User avatar" className="w-100 h-100" style={{ objectFit: 'cover', borderRadius: '50%' }} />
           </div>
 
           <div className="flex-grow-1">
@@ -42,8 +51,10 @@ export default function CommentCard({ comment }: CommentCardProps): ReactElement
           </div>
         </div>
 
-  {/* Comment text */}
-  <div className="mb-2 text-break" style={{ wordBreak: 'break-word' }}>{text}</div>
+        {/* Comment text */}
+        <div className="mb-2 text-break" style={{ wordBreak: 'break-word' }}>
+          {text}
+        </div>
 
         {/* Thumbnails */}
         {images.length > 0 && (
@@ -52,7 +63,12 @@ export default function CommentCard({ comment }: CommentCardProps): ReactElement
               <div
                 key={img.id}
                 className={idx === 0 ? 'me-2' : ''}
-                style={{ width: 150, height: 100, borderRadius: 12, overflow: 'hidden' }}
+                style={{
+                  width: 150,
+                  height: 100,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                }}
               >
                 <img
                   src={img.image_url}

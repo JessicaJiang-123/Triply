@@ -62,10 +62,13 @@ export default function PlaceCard({
             alt={name}
             role={onPreviewComments ? 'button' : undefined}
             tabIndex={onPreviewComments ? 0 : undefined}
-            onClick={() => onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)}
+            onClick={() =>
+              onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)
+            }
             onKeyDown={(e: React.KeyboardEvent) => {
               if (!onPreviewComments || !mapbox_id) return;
-              if (e.key === 'Enter' || e.key === ' ') onPreviewComments(mapbox_id);
+              if (e.key === 'Enter' || e.key === ' ')
+                onPreviewComments(mapbox_id);
             }}
             style={{
               height: 140,
@@ -84,12 +87,19 @@ export default function PlaceCard({
                 className="mb-0 fw-bold"
                 role={onPreviewComments ? 'button' : undefined}
                 tabIndex={onPreviewComments ? 0 : undefined}
-                onClick={() => onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)}
+                onClick={() =>
+                  onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)
+                }
                 onKeyDown={(e: React.KeyboardEvent) => {
                   if (!onPreviewComments || !mapbox_id) return;
-                  if (e.key === 'Enter' || e.key === ' ') onPreviewComments(mapbox_id);
+                  if (e.key === 'Enter' || e.key === ' ')
+                    onPreviewComments(mapbox_id);
                 }}
-                style={{ cursor: onPreviewComments ? 'pointer' : undefined, fontSize: 18, lineHeight: 1.3 }}
+                style={{
+                  cursor: onPreviewComments ? 'pointer' : undefined,
+                  fontSize: 18,
+                  lineHeight: 1.3,
+                }}
               >
                 {order ? `${order}. ` : ''}
                 {name}

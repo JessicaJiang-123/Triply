@@ -14,8 +14,8 @@ import Select from 'react-select';
 import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '../components/NavigationBar';
-import { fetchPlaceImage } from '../utils/fetchPlaceImage';
 import type { Trip } from '../types/tripTypes';
+import axios from 'axios';
 
 export default function AddTripPage() {
   const [formData, setFormData] = useState({
@@ -26,6 +26,8 @@ export default function AddTripPage() {
     preferences: [] as string[],
   });
   const [submitting, setSubmitting] = useState(false);
+  // AI submission states
+  const [isAiSubmitting, setIsAiSubmitting] = useState(false);
   const [isCityInvalid, setIsCityInvalid] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -82,12 +84,36 @@ export default function AddTripPage() {
     setFormData((prev) => ({ ...prev, preferences: selectedValues }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submission for both manual and AI modes
+  const handleSubmit = async (
+    e: React.FormEvent,
+    mode: 'manual' | 'ai' = 'manual'
+  ) => {
     e.preventDefault();
+
+    setErrorMsg(null);
+
+    // Validate trip name (not empty)
+    if (!formData.name.trim()) {
+      setErrorMsg('Trip title is required.');
+      return;
+    }
 
     // Validate destination city (not empty)
     if (!formData.destination_city.trim()) {
       setIsCityInvalid(true);
+      return;
+    }
+
+    // Validate start date
+    if (!formData.start_date) {
+      setErrorMsg('Start date is required.');
+      return;
+    }
+
+    // Validate end date
+    if (!formData.end_date) {
+      setErrorMsg('End date is required.');
       return;
     }
 
@@ -97,18 +123,23 @@ export default function AddTripPage() {
       return;
     }
 
-    setSubmitting(true);
+    // start submitting states
+    if (mode === 'manual') {
+      setSubmitting(true);
+      setIsAiSubmitting(false);
+    } else {
+      setIsAiSubmitting(true);
+      setSubmitting(false);
+    }
 
     try {
-      // Fetch image URL based on destination city
-      const imageUrl = await fetchPlaceImage(
-        formData.destination_city.split(',')[0]
-      );
-      console.log('Fetched image URL:', imageUrl);
-
-      const payload = { ...formData, image_url: imageUrl };
+      const payload = { ...formData };
       console.log('Submitting trip data:', payload);
-      const response = await axiosInstance.post('/api/plans/trips/', payload);
+
+      const endpoint =
+        mode === 'ai' ? '/api/plans/generate-ai-plan/' : '/api/plans/trips/';
+
+      const response = await axiosInstance.post(endpoint, payload);
       console.log('Trip created:', response.data);
 
       const newTrip: Trip = response.data;
@@ -125,11 +156,17 @@ export default function AddTripPage() {
       }
     } catch (error) {
       console.error('Failed to create trip:', error);
-      setErrorMsg(
-        error instanceof Error ? error.message : 'Failed to create trip.'
-      );
+      if (axios.isAxiosError(error) && error.response) {
+        setErrorMsg(
+          error.response.data.detail ||
+            'An error occurred while creating the trip.'
+        );
+      } else {
+        setErrorMsg('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
+      setIsAiSubmitting(false);
     }
   };
 
@@ -244,12 +281,22 @@ export default function AddTripPage() {
 
               <div className="text-center mt-4 d-flex justify-content-center gap-3">
                 <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={submitting}
+                  variant="outline-primary"
+                  type="button"
+                  onClick={(e) => handleSubmit(e, 'ai')}
+                  disabled={submitting || isAiSubmitting}
                   className="px-4"
                 >
-                  {submitting ? 'Creating...' : 'Create Trip'}
+                  {isAiSubmitting ? 'Generating...' : '✨ Generate with AI'}
+                </Button>
+
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={submitting || isAiSubmitting}
+                  className="px-4"
+                >
+                  {submitting ? 'Creating...' : 'Create Manually'}
                 </Button>
 
                 <Button
@@ -257,6 +304,7 @@ export default function AddTripPage() {
                   type="button"
                   className="px-4"
                   onClick={() => navigate('/trips')}
+                  disabled={submitting || isAiSubmitting}
                 >
                   Cancel
                 </Button>

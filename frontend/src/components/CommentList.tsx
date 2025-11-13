@@ -9,7 +9,10 @@ type Props = {
   refreshKey?: number;
 };
 
-export default function CommentList({ mapboxId, refreshKey }: Props): ReactElement | null {
+export default function CommentList({
+  mapboxId,
+  refreshKey,
+}: Props): ReactElement | null {
   const [comments, setComments] = useState<PlaceComment[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +28,9 @@ export default function CommentList({ mapboxId, refreshKey }: Props): ReactEleme
       setLoading(true);
       setError(null);
       try {
-        const res = await axiosInstance.get(`/api/plans/places/by-mapbox/${encodeURIComponent(mapboxId)}/comments/`);
+        const res = await axiosInstance.get(
+          `/api/plans/places/by-mapbox/${encodeURIComponent(mapboxId)}/comments/`
+        );
         if (cancelled) return;
         setComments(res.data || []);
       } catch (err: unknown) {
@@ -51,7 +56,8 @@ export default function CommentList({ mapboxId, refreshKey }: Props): ReactEleme
 
   const list = comments || [];
 
-  if (list.length === 0) return <div className="text-muted">No comments yet.</div>;
+  if (list.length === 0)
+    return <div className="text-muted">No comments yet.</div>;
 
   // Render a self-contained scrollable list. Parent can override sizing via CSS if needed.
   return (

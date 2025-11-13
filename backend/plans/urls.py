@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register(r'trips', views.TripViewSet, basename='trip')
 
 urlpatterns = [
+     # Shareable plan view
      path("share/<uuid:share_uuid>/",
           views.PlanShareAPIView.as_view(), name="plan-share"),
 
@@ -19,7 +20,6 @@ urlpatterns = [
      path("trips/<int:trip_id>/days/<int:day_id>/places/<int:place_id>/",
           views.PlaceForDayAPIView.as_view(), name="place-detail"),
 
-
      # Comments by mapbox_id
      path("places/by-mapbox/<str:mapbox_id>/comments/",
           views.PlaceCommentAPIView.as_view(), name="place-comments-by-mapbox"),
@@ -27,9 +27,17 @@ urlpatterns = [
      # Upload comment images (multipart/form-data)
      path("comments/upload-images/", views.UploadCommentImageAPIView.as_view(), name="upload-comment-images"),
 
-
      # Lightweight preview: return recent comment images for a shared place via mapbox_id
      path("places/by-mapbox/<str:mapbox_id>/comment-images/",
           views.PlaceCommentImagesAPIView.as_view(), name="place-comment-images"),
-     path("", include(router.urls))
+     
+     # Register the trips router URLs
+     path("", include(router.urls)),
+
+     # AI-generated plan
+     path(
+        'generate-ai-plan/',
+        views.AIGeneratePlanView.as_view(), 
+        name='generate-ai-plan'
+    ),
 ]

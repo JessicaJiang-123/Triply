@@ -13,7 +13,7 @@ import { SearchBox } from '@mapbox/search-js-react';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import NavigationBar from '../components/NavigationBar';
 import axiosInstance from '../api/axiosInstance';
-import { fetchPlaceImage } from '../utils/fetchPlaceImage';
+import axios from 'axios';
 
 export default function AddPlacePage() {
   const { trip_id, day_id, place_id } = useParams<{
@@ -139,25 +139,15 @@ export default function AddPlacePage() {
       // Only fetch a new image if user is adding a new place
       // or wants to change the cover in edit mode
       if (!isEditMode || changeCover) {
-        imageUrl = await fetchPlaceImage(formData.name);
-        console.log('Fetched cover image:', imageUrl);
+        imageUrl = 'need to be updated in backend'; // Placeholder, backend will handle image fetching
       }
 
-      let payload = {};
-      if (imageUrl !== '') {
-        payload = {
-          ...formData,
-          trip: trip_id,
-          day: day_id,
-          image_url: imageUrl,
-        };
-      } else {
-        payload = {
-          ...formData,
-          trip: trip_id,
-          day: day_id,
-        };
-      }
+      const payload = {
+        ...formData,
+        trip: trip_id,
+        day: day_id,
+        ...(imageUrl && { image_url: imageUrl }),
+      };
       console.log('Submitting place:', payload);
 
       if (isEditMode) {
@@ -180,9 +170,14 @@ export default function AddPlacePage() {
       navigate(`/trips/${trip_id}/days/${day_id}`);
     } catch (error) {
       console.error('Failed to add place:', error);
-      setErrorMsg(
-        error instanceof Error ? error.message : 'Failed to add place.'
-      );
+      if (axios.isAxiosError(error) && error.response) {
+        setErrorMsg(
+          error.response.data.detail ||
+            'An error occurred while adding the place.'
+        );
+      } else {
+        setErrorMsg('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

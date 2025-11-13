@@ -1,4 +1,4 @@
-// Define TypeScript types for Trip, Day, and Place
+// Define TypeScript types for Trip, Day, Place, and RouteSegment
 
 export type Place = {
   id: number;
@@ -20,12 +20,15 @@ export type Day = {
   date: string;
   order: number;
   places: Place[];
+  routes?: RouteSegment[];
 };
 
 export type Trip = {
   id: number;
   name: string;
   destination_city: string;
+  latitude?: number;
+  longitude?: number;
   start_date: string;
   end_date: string;
   days: Day[];
@@ -34,19 +37,27 @@ export type Trip = {
   firstDayId?: number;
 };
 
+export type RouteSegment = {
+  id: number;
+  route_id: string;
+  from_place_name: string;
+  to_place_name: string;
+  distance_km: number;
+  travel_time_min: number;
+  coordinates: [number, number][];
+};
+
 export type SharedPlace = {
   mapbox_id: string;
   name: string;
-  latitude?: number;
-  longitude?: number;
-}
+};
 
 export type PlaceComment = {
   id: number;
   mapbox_id: string;
   text: string;
   created_at: string;
-  author: { id: number; username: string; } | null;
+  author: { id: number; username: string } | null;
   images?: CommentImage[];
 };
 
@@ -56,5 +67,5 @@ export type CommentImage = {
   comment_id: number;
   image_url: string;
   created_at: string;
-  uploaded_by?: { id: number; username: string; } | null;
-}
+  uploaded_by?: { id: number; username: string } | null;
+};
