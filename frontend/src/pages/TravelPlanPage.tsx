@@ -24,7 +24,7 @@ const TravelPlanPage: React.FC = () => {
       setError(null);
       try {
         // const response = await axiosInstance.get('/api/plans/trips/');
-        const mePromise = axiosInstance.get<CurrentUser>('/api/auth/profile/');
+        const mePromise = axiosInstance.get<CurrentUser>('/api/user/profile/');
         const tripsPromise = axiosInstance.get<Trip[]>('/api/plans/trips/');
         const [meResponse, tripsResponse] = await Promise.all([
           mePromise,

@@ -35,7 +35,7 @@ export default function PlanDetailPage(): ReactElement {
       setError(null);
 
       try {
-        const mePromise = axiosInstance.get<CurrentUser>('/api/auth/profile/');
+        const mePromise = axiosInstance.get<CurrentUser>('/api/user/profile/');
         const tripPromise = axiosInstance.get<Trip>(`/api/plans/trips/${trip_id}/`);
         const [meResponse, tripResponse] = await Promise.all([mePromise, tripPromise]);
         if (meResponse.data.is_authenticated) {
