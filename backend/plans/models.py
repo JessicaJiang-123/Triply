@@ -36,9 +36,9 @@ class Day(models.Model):
 class Place(models.Model):
     day = models.ForeignKey(Day, on_delete=models.CASCADE, related_name='places')
     name = models.CharField(max_length=200)
-    category = models.CharField(max_length=50, blank=True)
-    start_time = models.TimeField(null=True, blank=True)
-    end_time = models.TimeField(null=True, blank=True)
+    category = models.CharField(max_length=50, blank=True, null=True)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
     notes = models.CharField(max_length=200, blank=True)
     order = models.PositiveIntegerField()
     latitude = models.FloatField(null=True, blank=True)
