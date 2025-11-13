@@ -88,8 +88,10 @@ export default function PlaceImagePreview({
         <div>
             {/* Image strip: use Bootstrap utilities for layout and spacing */}
             <div
-                className="d-flex gap-3 overflow-auto p-2 bg-white rounded"
+                className="d-flex gap-3 flex-nowrap p-2 bg-white rounded"
                 style={{
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch',
                     background: 'rgba(255,255,255,0.95)',
                     boxShadow: '0 6px 20px rgba(0,0,0,0.04)',
                 }}
@@ -98,7 +100,7 @@ export default function PlaceImagePreview({
                     <div
                         key={img.id || idx}
                         className="flex-shrink-0 rounded overflow-hidden"
-                        style={{ width: 240, height: 160 }}
+                        style={{ minWidth: 240, height: 160 }}
                     >
                         <img
                             src={img.image_url}

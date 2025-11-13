@@ -8,9 +8,10 @@ type Props = {
     mapboxId?: string | null;
     placeName?: string;
     onClose?: () => void;
+    maxWidth?: number;
 };
 
-export default function PlaceCommentPanel({ mapboxId, placeName, onClose }: Props): ReactElement | null {
+export default function PlaceCommentPanel({ mapboxId, placeName, onClose, maxWidth = 720 }: Props): ReactElement | null {
     const [refresh, setRefresh] = useState(0);
     if (!mapboxId) return null;
 
@@ -33,7 +34,7 @@ export default function PlaceCommentPanel({ mapboxId, placeName, onClose }: Prop
 
             {/* absolutely positioned add comment form centered at bottom */}
             <div style={{ position: 'absolute', left: '50%', bottom: 12, transform: 'translateX(-50%)', width: '100%', paddingLeft: 12, paddingRight: 12 }}>
-                <div style={{ maxWidth: 720, margin: '0 auto' }}>
+                <div style={{ maxWidth: maxWidth, margin: '0 auto' }}>
                     <AddCommentForm
                         mapboxId={mapboxId}
                         onPosted={() => {

@@ -42,8 +42,8 @@ export default function CommentCard({ comment }: CommentCardProps): ReactElement
           </div>
         </div>
 
-        {/* Comment text */}
-        <div className="mb-2">{text}</div>
+  {/* Comment text */}
+  <div className="mb-2 text-break" style={{ wordBreak: 'break-word' }}>{text}</div>
 
         {/* Thumbnails */}
         {images.length > 0 && (
