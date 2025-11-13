@@ -62,7 +62,7 @@ export default function ShareTripModal({ show, onHide, tripId }: ShareModalProps
       <Modal.Header closeButton>
         <Modal.Title>
           <i className="bi bi-share-fill me-2"></i>
-          Share Trip Plan
+          Share Your Travel Plan
         </Modal.Title>
       </Modal.Header>
 

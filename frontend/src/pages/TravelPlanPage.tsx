@@ -5,7 +5,7 @@ import NavigationBar from '../components/NavigationBar';
 import TripCard from '../components/TripCard';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
-import type { Trip } from '../types/tripTypes';
+import type { CurrentUser, Trip } from '../types/tripTypes';
 import ShareTripModal from '../components/ShareTripModal';
 
 const TravelPlanPage: React.FC = () => {
@@ -16,15 +16,28 @@ const TravelPlanPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharingTripId, setSharingTripId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
-    const fetchTrips = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axiosInstance.get('/api/plans/trips/');
-        console.log('Fetched trips:', response.data);
-        setTrips(response.data);
+        // const response = await axiosInstance.get('/api/plans/trips/');
+        const mePromise = axiosInstance.get<CurrentUser>('/api/auth/profile/');
+        const tripsPromise = axiosInstance.get<Trip[]>('/api/plans/trips/');
+        const [meResponse, tripsResponse] = await Promise.all([
+          mePromise,
+          tripsPromise,
+        ]);
+        if (meResponse.data.is_authenticated) {
+            setCurrentUser(meResponse.data);
+            setTrips(tripsResponse.data);
+        } else {
+            setError('User not authenticated. Please log in.');
+        }
+        // console.log('Fetched trips:', response.data);
+        // setTrips(response.data);
       } catch (err) {
         console.error('Error fetching trips:', err);
         setError('Failed to load your trips. Are you logged in?');
@@ -33,7 +46,7 @@ const TravelPlanPage: React.FC = () => {
       }
     };
 
-    fetchTrips();
+    fetchData();
   }, []);
 
   const handleAddTrip = () => {
@@ -107,25 +120,30 @@ const TravelPlanPage: React.FC = () => {
         >
           <div style={{ width: '100%', maxWidth: '1200px' }}>
             <Row xs={1} md={2} className="g-5">
-              {trips.map((trip) => (
-                <Link
-                  key={trip.id}
-                  to={`/trips/${trip.id}/days/${trip.firstDayId}`}
-                  className="col"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <TripCard
-                    id={trip.id}
-                    onDelete={handleDelete}
-                    onShare={handleShare}
-                    title={trip.name}
-                    location={trip.destination_city}
-                    start_date={trip.start_date}
-                    end_date={trip.end_date}
-                    image_url={trip.image_url || '/login_bg.jpg'}
-                  />
-                </Link>
-              ))}
+              {trips.map((trip) => {
+                const isOwner = currentUser ? currentUser.id === trip.owner.id : false;
+                return (
+                  <Link
+                    key={trip.id}
+                    to={`/trips/${trip.id}/days/${trip.firstDayId}`}
+                    className="col"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <TripCard
+                      id={trip.id}
+                      onDelete={handleDelete}
+                      onShare={handleShare}
+                      title={trip.name}
+                      location={trip.destination_city}
+                      start_date={trip.start_date}
+                      end_date={trip.end_date}
+                      image_url={trip.image_url || '/login_bg.jpg'}
+                      isOwner={isOwner}
+                      ownerName={trip.owner.username}
+                    />
+                  </Link>
+                );
+              })}
             </Row>
 
             {trips.length === 0 && (

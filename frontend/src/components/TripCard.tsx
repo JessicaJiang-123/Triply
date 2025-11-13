@@ -10,6 +10,8 @@ interface TripCardProps {
   image_url: string;
   onDelete: (id: number) => void;
   onShare: (id: number) => void;
+  isOwner: boolean;
+  ownerName: string;
 }
 
 const TripCard: React.FC<TripCardProps> = ({
@@ -21,6 +23,8 @@ const TripCard: React.FC<TripCardProps> = ({
   image_url,
   onDelete,
   onShare,
+  isOwner,
+  ownerName,
 }) => {
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -107,26 +111,28 @@ const TripCard: React.FC<TripCardProps> = ({
               </Card.Text>
             )}
 
+            {/* --- Start condition rendering logic --- */}
+            {isOwner ? (
+              // If owner, show all buttons
+              <div className="mt-auto text-end d-flex gap-2 justify-content-end">
+                <Button variant="outline-primary" size="sm" onClick={handleShareClick}>
+                  <i className="bi bi-share me-1"></i> Share
+                </Button>
+                <Button variant="outline-danger" size="sm" onClick={handleDeleteClick}>
+                  <i className="bi bi-trash me-1"></i> Delete
+                </Button>
+              </div>
+            ) : (
+              // If not owner, show "Shared by"
+              <div className="mt-auto text-end">
+                <small className="text-muted" style={{ fontSize: '0.9rem' }}>
+                  <i className="bi bi-person-check-fill me-1"></i>
+                  Shared by <strong>{ownerName}</strong>
+                </small>
+              </div>
+            )}
+            {/* --- End condition rendering logic --- */}
             
-            <div className="mt-auto text-end d-flex gap-2 justify-content-end">
-              {/* --- Share Button --- */}
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={handleShareClick}
-              >
-                <i className="bi bi-share me-1"></i> Share
-              </Button>
-
-              {/* --- Delete Button --- */}
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={handleDeleteClick}
-              >
-                <i className="bi bi-trash me-1"></i> Delete
-              </Button>
-            </div>
           </Card.Body>
         </Col>
       </Row>

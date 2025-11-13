@@ -6,6 +6,11 @@ export type SimpleUser = {
   email: string;
 };
 
+export type CurrentUser = SimpleUser & {
+  is_authenticated: boolean;
+  picture?: string;
+};
+
 export type Place = {
   id: number;
   name: string;
