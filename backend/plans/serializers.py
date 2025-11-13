@@ -89,7 +89,8 @@ class DaySerializer(serializers.ModelSerializer):
 
 class TripSerializer(serializers.ModelSerializer):
     days = DaySerializer(many=True, read_only=True)
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    # user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    owner = SimpleUserSerializer(source='user', read_only=True)
     firstDayId = serializers.SerializerMethodField()
     shared_users = SimpleUserSerializer(many=True, read_only=True)
 
@@ -97,7 +98,7 @@ class TripSerializer(serializers.ModelSerializer):
         model = Trip
         fields = [
             "id",
-            "user",
+            "owner",
             "name",
             "destination_city",
             "latitude",
