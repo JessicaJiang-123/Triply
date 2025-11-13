@@ -36,13 +36,10 @@ class Day(models.Model):
 
 
 class SharedPlace(models.Model):
-    """Canonical/shared place feature (e.g. Mapbox feature).
+    """Canonical/shared place feature (Mapbox feature).
 
-    A combination of mapbox_id and worldview uniquely identifies a Mapbox
-    feature. Store optional metadata returned from Mapbox in `metadata`.
+    A mapbox_id uniquely identifies a Mapbox feature.
     """
-    # Mapbox feature identifier. We will use mapbox_id as the unique
-    # canonical identifier for a shared place.
     mapbox_id = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255, blank=True)
     latitude = models.FloatField(null=True, blank=True)
