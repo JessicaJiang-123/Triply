@@ -33,10 +33,7 @@ export default function PlanDetailPage(): ReactElement {
       } catch (err) {
         console.error('Failed to fetch trip', err);
         if (axios.isAxiosError(err) && err.response) {
-          setError(
-            err.response.data.detail ||
-              'Fetch trip details failed'
-          );
+          setError(err.response.data.detail || 'Fetch trip details failed');
         } else {
           setError('Fetch trip details failed');
         }
@@ -62,10 +59,7 @@ export default function PlanDetailPage(): ReactElement {
       } catch (err) {
         console.error('Failed to fetch day places', err);
         if (axios.isAxiosError(err) && err.response) {
-          setError(
-            err.response.data.detail ||
-              'Fetch day places failed'
-          );
+          setError(err.response.data.detail || 'Fetch day places failed');
         } else {
           setError('Fetch day places failed');
         }
@@ -100,10 +94,7 @@ export default function PlanDetailPage(): ReactElement {
     } catch (err) {
       console.error('Delete place failed', err);
       if (axios.isAxiosError(err) && err.response) {
-        setError(
-          err.response.data.detail ||
-            'Delete place failed'
-        );
+        setError(err.response.data.detail || 'Delete place failed');
       } else {
         setError('Delete place failed');
       }
