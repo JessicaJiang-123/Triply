@@ -9,6 +9,7 @@ interface TripCardProps {
   end_date: string;
   image_url: string;
   onDelete: (id: number) => void;
+  onShare: (id: number) => void;
 }
 
 const TripCard: React.FC<TripCardProps> = ({
@@ -19,11 +20,17 @@ const TripCard: React.FC<TripCardProps> = ({
   end_date,
   image_url,
   onDelete,
+  onShare,
 }) => {
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onDelete(id);
+  };
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onShare(id);
   };
 
   // Format location to be concise
@@ -100,8 +107,18 @@ const TripCard: React.FC<TripCardProps> = ({
               </Card.Text>
             )}
 
-            {/* --- Delete Button --- */}
-            <div className="mt-auto text-end">
+            
+            <div className="mt-auto text-end d-flex gap-2 justify-content-end">
+              {/* --- Share Button --- */}
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={handleShareClick}
+              >
+                <i className="bi bi-share me-1"></i> Share
+              </Button>
+
+              {/* --- Delete Button --- */}
               <Button
                 variant="outline-danger"
                 size="sm"
