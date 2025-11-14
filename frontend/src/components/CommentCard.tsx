@@ -11,7 +11,7 @@ export default function CommentCard({
   comment,
 }: CommentCardProps): ReactElement {
   const { currentUser } = useContext(AuthContext);
-  
+
   const authorName = comment.author?.username ?? 'Someone';
   const text = comment.text;
   const createdAt = comment.created_at;
@@ -42,7 +42,12 @@ export default function CommentCard({
             style={{ width: 40, height: 40, flex: '0 0 auto' }}
             aria-hidden
           >
-            <img src={currentUser?.picture} alt="User avatar" className="w-100 h-100" style={{ objectFit: 'cover', borderRadius: '50%' }} />
+            <img
+              src={currentUser?.picture}
+              alt="User avatar"
+              className="w-100 h-100"
+              style={{ objectFit: 'cover', borderRadius: '50%' }}
+            />
           </div>
 
           <div className="flex-grow-1">
