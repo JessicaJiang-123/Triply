@@ -74,7 +74,7 @@ export default function PlanDetailPage(): ReactElement {
   }, [trip_id, day_id]);
 
   // Delete place handler
-  async function handleDeletePlace(placeId: number) {
+  async function handleDeletePlace(placeId: number, mapboxId: string) {
     if (!trip_id || !selectedDayId) return;
     if (!window.confirm('Are you sure you want to delete this place?')) {
       return;
@@ -86,6 +86,12 @@ export default function PlanDetailPage(): ReactElement {
       const updatedPlaces: Place[] = res.data;
       setPlaces(updatedPlaces);
 
+      // Re-fetch routes after deletion
+      const routesRes = await axiosInstance.get(
+        `/api/plans/trips/${trip_id}/days/${selectedDayId}/`
+      );
+      setRoutes(routesRes.data.routes || []);
+
       // Also update the trip state to reflect the change in its day
       setTrip((prevTrip) => {
         if (!prevTrip) return prevTrip;
@@ -94,6 +100,11 @@ export default function PlanDetailPage(): ReactElement {
         );
         return { ...prevTrip, days: updatedDays };
       });
+
+      // If the deleted place was being viewed in the comment panel, close it
+      if (selectedMapboxId === mapboxId) {
+        setSelectedMapboxId(null);
+      }
     } catch (err) {
       console.error('Delete place failed', err);
       if (axios.isAxiosError(err) && err.response) {
@@ -300,7 +311,8 @@ export default function PlanDetailPage(): ReactElement {
               <PlaceCommentPanel
                 mapboxId={selectedMapboxId}
                 placeName={
-                  places.find((p) => p.mapbox_id === selectedMapboxId)?.name || ''
+                  places.find((p) => p.mapbox_id === selectedMapboxId)?.name ||
+                  ''
                 }
                 onClose={() => setSelectedMapboxId(null)}
               />
