@@ -5,7 +5,7 @@ import os
 import json
 
 # configure API key
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config.ini') # /backend/plans/ai_planner.py -> /backend/config.ini
+config_path = os.path.join(os.path.dirname(__file__), '../../', 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path)
 
