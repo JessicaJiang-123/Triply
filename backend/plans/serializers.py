@@ -45,6 +45,16 @@ class PlaceSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
+        # Required fields
+        required_fields = ["mapbox_id", "name", "address", "start_time", "end_time"]
+
+        missing = [f for f in required_fields if not data.get(f)]
+        if missing:
+            raise serializers.ValidationError(
+                {field: "This field is required." for field in missing}
+            )
+
+        # Validate start_time <= end_time
         start_time = data.get('start_time')
         end_time = data.get('end_time')
 
@@ -94,6 +104,16 @@ class TripSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
+        # Required fields
+        required_fields = ["name", "destination_city", "start_date", "end_date"]
+
+        missing = [f for f in required_fields if not data.get(f)]
+        if missing:
+            raise serializers.ValidationError(
+                {field: "This field is required." for field in missing}
+            )
+        
+        # Validate start_date <= end_date
         start_date = data.get('start_date')
         end_date = data.get('end_date')
 
