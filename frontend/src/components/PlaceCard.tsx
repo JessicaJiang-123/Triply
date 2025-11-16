@@ -149,7 +149,9 @@ export default function PlaceCard({
               <Button
                 variant="outline-danger"
                 size="sm"
-                onClick={() => id && mapbox_id && onDelete && onDelete(id, mapbox_id)}
+                onClick={() =>
+                  id && mapbox_id && onDelete && onDelete(id, mapbox_id)
+                }
               >
                 <i className="bi bi-trash me-1"></i> Delete
               </Button>
