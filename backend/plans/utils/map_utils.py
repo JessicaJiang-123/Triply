@@ -42,7 +42,7 @@ def search_place(place_name, city, country):
         data = response.json()
         features = data.get("features", [])
         if not features:
-            print(f"No results found for place '{place_name}' in mapbox searchbox.")
+            # print(f"No results found for place '{place_name}' in mapbox searchbox.")
             return None
         
         city_lower = city.strip().lower()
@@ -72,7 +72,7 @@ def search_place(place_name, city, country):
             break
         
         if not valid_results:
-            print(f"No valid results matching for place '{place_name}' in {city}, {country}.")
+            # print(f"No valid results matching for place '{place_name}' in {city}, {country}.")
             return None
 
         top_result = valid_results[0]
