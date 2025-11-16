@@ -6,6 +6,7 @@ import TripCard from '../components/TripCard';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 import type { Trip } from '../types/tripTypes';
+import UrlShareModal from '../components/UrlShareModal';
 
 const TravelPlanPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const TravelPlanPage: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharingTripId, setSharingTripId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -47,6 +50,11 @@ const TravelPlanPage: React.FC = () => {
         setError('Failed to delete the trip. Please try again.');
       }
     }
+  };
+
+  const handleShare = (id: number) => {
+    setSharingTripId(id);
+    setShowShareModal(true);
   };
 
   if (loading) {
@@ -109,6 +117,7 @@ const TravelPlanPage: React.FC = () => {
                   <TripCard
                     id={trip.id}
                     onDelete={handleDelete}
+                    onShare={handleShare}
                     title={trip.name}
                     location={trip.destination_city}
                     start_date={trip.start_date}
@@ -150,6 +159,12 @@ const TravelPlanPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <UrlShareModal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        tripId={sharingTripId}
+      />
     </>
   );
 };
