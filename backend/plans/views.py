@@ -1,13 +1,9 @@
-import json
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, permissions, status
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
-from rest_framework.test import APIRequestFactory
 from django.db import transaction
-from datetime import date
 from rest_framework.decorators import action
 
 from .services import ai_planner_service, place_service, trip_service
@@ -166,122 +162,22 @@ class AIGeneratePlanView(APIView):
         Receives trip data from AddTripPage, creates Trip/Days,
         calls AI Planner, and creates Places.
         """
-        try:
-            trip_name = request.data['name']
-            destination_city = request.data['destination_city']
-            start_date_str = request.data['start_date']
-            end_date_str = request.data['end_date']
-            preferences = request.data.get('preferences', [])
-
-            start_date = date.fromisoformat(start_date_str)
-            end_date = date.fromisoformat(end_date_str)
-
-            if end_date < start_date:
-                return Response(
-                    {"detail": "End date cannot be earlier than start date."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            num_days = (end_date - start_date).days + 1
-
-        except (KeyError, ValueError) as e:
-            return Response(
-                {"detail": f"Invalid or missing data: {e}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        input_serializer = TripSerializer(data=request.data, context={'request': request})
+        if not input_serializer.is_valid():
+            return Response({"detail": input_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
-        ## Create Trip and Days using TripViewSet ###
+        trip = ai_planner_service.create_trip_plan_from_ai(request.user, input_serializer.validated_data)
 
-        factory = APIRequestFactory()
-
-        trip_create_request = factory.post(
-            "/api/plans/trips/",
-            {
-                "name": request.data['name'],
-                "destination_city": request.data['destination_city'],
-                "start_date": request.data["start_date"],
-                "end_date": request.data["end_date"],
-            },
-            format="json"
-        )
-        trip_create_request.user = request.user
-        
-        trip_create_view = TripViewSet.as_view({'post': 'create'})
-        trip_response = trip_create_view(trip_create_request)
-
-        if trip_response.status_code != status.HTTP_201_CREATED:
-            return Response(
-                {"detail": "Failed to create trip."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        
-        trip_id = trip_response.data.get('id')
-
-        # load created trip object from DB
-        trip = Trip.objects.get(id=trip_id)
-
-        # load created days
-        days = list(trip.days.order_by('order')) # type: ignore
-
-        # call AI planner to get place recommendations
-        recommendations = ai_planner_service.generate_trip_recommendations(
-            trip_name, destination_city, preferences, num_days
-        )
-
-        if recommendations is None:
-            # AI planner not available, delete created trip and days
-            trip.delete()
-
+        if not trip:
             return Response(
                 {"detail": "AI planner is busy or not available now, please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
-        print("AI Recommendations:", json.dumps(recommendations, indent=2))
-        
-        ### Create Places using PlaceForDayAPIView ###
-        place_view = PlaceForDayAPIView.as_view()
-
-        for day_plan in recommendations:
-            day_number = day_plan.get('day', None)
-            if not day_number:
-                continue
-
-            day_index = day_number - 1
-            if not (0 <= day_index < len(days)):
-                continue
-
-            print(f"Processing day {day_number} with day_id={days[day_index].id}")
-
-            day_obj = days[day_index]
-
-            day_plan_places = day_plan.get('places', [])
-            print(f"  Number of places to add: {len(day_plan_places)}")
-
-            for place_info in day_plan_places:
-                print(f"    Adding place: {place_info.get('name', 'N/A')}")
-                place_request = factory.post(
-                    f"/api/plans/trips/{trip_id}/days/{day_obj.id}/places/",
-                    place_info,
-                    format="json"
-                )
-                place_request.user = request.user
-
-                place_response = place_view(
-                    place_request,
-                    trip_id=trip_id,
-                    day_id=day_obj.id
-                )
-
-                if place_response.status_code not in [status.HTTP_200_OK, status.HTTP_201_CREATED]:
-                    print("[Skipped] Warning: Failed to create place via AI planner:", json.dumps(place_info, indent=2))
-                    print("  Error response:", place_response.data) # type: ignore
-                    continue
                 
-        serializer = TripSerializer(trip)
+        output_serializer = TripSerializer(trip, context={'request': request})
 
         return Response(
-            serializer.data,
+            output_serializer.data,
             status=status.HTTP_201_CREATED
         )
 
