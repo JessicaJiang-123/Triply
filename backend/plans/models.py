@@ -15,6 +15,7 @@ class Trip(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     image_url = models.CharField(max_length=1024, blank=True, null=True)
+    preferences = models.JSONField(default=list, blank=True) # List of user travel preferences
 
     def __str__(self):
         return f"{self.name} ({self.user})"

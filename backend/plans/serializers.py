@@ -100,6 +100,7 @@ class TripSerializer(serializers.ModelSerializer):
             "share_uuid",
             "days",
             "image_url",
+            "preferences",
             "firstDayId",
         ]
 
