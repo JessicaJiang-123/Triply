@@ -8,11 +8,15 @@ import PlaceCard from '../components/PlaceCard';
 import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import Map from '../components/Map';
 import { useRef } from 'react';
-import type { Place, RouteSegment, Trip } from '../types/tripTypes';
+import type { Place, RouteSegment, Trip, CurrentUser } from '../types/tripTypes';
 import axios from 'axios';
 import UrlShareModal from '../components/UrlShareModal';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
 export default function PlanDetailPage(): ReactElement {
+  const { currentUser } = useContext(AuthContext);
+  const [sharePermission, setSharePermission] = useState<string | null>(null);
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -28,6 +32,17 @@ export default function PlanDetailPage(): ReactElement {
 
   // fetch trip details to populate date bar
   useEffect(() => {
+    // Get share permission from localStorage
+    const permission = localStorage.getItem('share_permission');
+    setSharePermission(permission);
+
+    // If not logged in and not have a share permission token
+    if (!currentUser && !permission) {
+      navigate('/login');
+      return;
+    }
+
+    // User is authenticated either by login or share link (same as before)
     const fetchTrip = async () => {
       if (!trip_id) return;
       try {
@@ -44,7 +59,15 @@ export default function PlanDetailPage(): ReactElement {
       }
     };
     fetchTrip();
-  }, [trip_id]);
+
+    // when the user leaves this page
+    return () => {
+      console.log("Cleaning up share permissions...");
+      localStorage.removeItem('share_permission');
+      delete axiosInstance.defaults.headers.common['X-Share-Token'];
+    }
+
+  }, [trip_id, currentUser, navigate]);
 
   // fetch places for current day
   useEffect(() => {
@@ -124,6 +147,10 @@ export default function PlanDetailPage(): ReactElement {
           .filter((r) => r.route_id === selectedRouteId)
           .map((r) => r.coordinates)
       : routes.map((r) => r.coordinates);
+
+  const isLoggedInOwner = currentUser ? (currentUser as CurrentUser).id === trip?.owner.id : false;
+  const isEditLinkUser = sharePermission === 'edit';
+  const canEdit = isLoggedInOwner || isEditLinkUser;
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -209,15 +236,17 @@ export default function PlanDetailPage(): ReactElement {
               <i className="bi bi-caret-right-fill fs-5"></i>
             </Button>
             {/* --- Share Button --- */}
-            <Button
-              variant="light"
-              size="sm"
-              className="ms-2 d-flex align-items-center justify-content-center"
-              onClick={handleShare}
-              title="Share this trip"
-            >
-              <i className="bi bi-share-fill fs-5 text-primary"></i>
-            </Button>
+            {isLoggedInOwner && (
+              <Button
+                variant="light"
+                size="sm"
+                className="ms-2 d-flex align-items-center justify-content-center"
+                onClick={handleShare}
+                title="Share this trip"
+              >
+                <i className="bi bi-share-fill fs-5 text-primary"></i>
+              </Button>
+            )}
           </div>
 
           {/* Scrollable list */}
@@ -246,6 +275,7 @@ export default function PlanDetailPage(): ReactElement {
                     onDelete={handleDeletePlace}
                     trip_id={trip.id}
                     day_id={Number(day_id)}
+                    isOwner={canEdit}
                   />
                   {/* Clickable distance + duration line */}
                   {index < routes.length && (
@@ -283,22 +313,24 @@ export default function PlanDetailPage(): ReactElement {
           </div>
 
           {/* Fixed bottom Add button */}
-          <div
-            className="p-3 border-top flex-shrink-0"
-            style={{
-              backgroundColor: '#fff',
-              boxShadow: '0 -2px 8px rgba(0,0,0,0.05)',
-              zIndex: 10,
-            }}
-          >
-            <Button
-              className="w-100 d-flex align-items-center justify-content-center"
-              variant="primary"
-              onClick={handleAddPlace}
+          {canEdit && (
+            <div
+              className="p-3 border-top flex-shrink-0"
+              style={{
+                backgroundColor: '#fff',
+                boxShadow: '0 -2px 8px rgba(0,0,0,0.05)',
+                zIndex: 10,
+              }}
             >
-              <i className="bi bi-plus-circle me-2"></i> Add new place
-            </Button>
-          </div>
+              <Button
+                className="w-100 d-flex align-items-center justify-content-center"
+                variant="primary"
+                onClick={handleAddPlace}
+              >
+                <i className="bi bi-plus-circle me-2"></i> Add new place
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Right Column — Comment panel only */}
