@@ -4,6 +4,11 @@ import configparser
 import os
 import json
 
+from ..serializers import PlaceSerializer
+from .place_service import create_place_for_day
+from ..utils.map_utils import search_place
+from .trip_service import create_trip_with_days
+
 # configure API key
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config.ini')
 config = configparser.ConfigParser()
@@ -117,3 +122,83 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
             delay *= 2  # exponential backoff
 
     return None
+
+def create_trip_plan_from_ai(user, trip_data):
+    """
+    Create Trip, Days and create Place objects from AI-generated recommendations.
+    """
+    # Create the Trip and Day objects
+    trip = create_trip_with_days(user, trip_data)
+
+    destination_parts = trip.destination_city.strip().split(",")
+    city = destination_parts[0].strip()
+    country = destination_parts[-1].strip() if len(destination_parts) > 1 else ""
+    preferences = trip_data.get('preferences', [])
+
+    days = list(trip.days.order_by('order')) # type: ignore
+    num_days = len(days)
+
+    # Generate AI recommendations
+    recommendations = generate_trip_recommendations(
+        trip_name=trip.name,
+        city=trip.destination_city,
+        preferences=preferences,
+        num_days=num_days,
+    )
+
+    if not recommendations:
+        trip.delete()
+        print("Failed to generate trip recommendations from AI.")
+        return None
+    
+    print("AI Recommendations:", json.dumps(recommendations, indent=2))
+    
+    # Create Place objects based on AI recommendations
+    for day_plan in recommendations:
+        day_number = day_plan.get("day", None)
+        if not day_number:
+            continue
+
+        day_index = day_number - 1
+        if not (0 <= day_index < len(days)):
+            continue
+
+        print(f"\nProcessing day {day_number} with day_id={days[day_index].id}")
+
+        day_obj = days[day_index]
+
+        day_plan_places = day_plan.get('places', [])
+        print(f" Number of places to add: {len(day_plan_places)}")
+
+        for idx, place_data in enumerate(day_plan_places, start=1):
+            print(f"  Processing place {idx}/{len(day_plan_places)}:")
+
+            search_place_name = place_data.get("name", "")
+            print(f"    Searching for place '{search_place_name}'...")
+            search_result = search_place(search_place_name, city, country)
+            if not search_result:
+                print(f"    [Skipped] place '{search_place_name}': not found in map search.")
+                continue
+
+            print(f"    Found place: {search_result['name']} at {search_result['full_address']} (mapbox_id={search_result['mapbox_id']})")
+
+            # Prepare data for Place creation
+            place_input_data = {
+                "name": search_result['name'],
+                "address": search_result['full_address'],
+                "mapbox_id": search_result['mapbox_id'],
+                "start_time": place_data.get("start_time", ""),
+                "end_time": place_data.get("end_time", ""),
+                "notes": place_data.get("notes", ""),
+            }
+
+            # validate place input data
+            place_serializer = PlaceSerializer(data=place_input_data)
+            if not place_serializer.is_valid():
+                print(f"    [Skipped] place '{search_place_name}': invalid data - {place_serializer.errors}")
+                continue
+
+            create_place_for_day(place_input_data, day_obj)
+            print(f"    [Added] place '{search_result['name']}' to day {day_number}.")
+
+    return trip
