@@ -50,6 +50,22 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
 
     Travel Preferences: {', '.join(preferences)}
 
+    IMPORTANT:
+    - Take the user's Travel Preferences into consideration **whenever they are provided**.
+    - Preferences should meaningfully influence which places are selected.
+    - The supported preference categories are:
+
+        • Eating and Drinking: prioritize famous restaurants, cafes, food markets, and iconic local dishes.
+        • Shopping: prioritize popular malls, outlets, markets, shopping streets, and brand-name districts.
+        • City Walk: prioritize walkable neighborhoods, promenades, famous streets, scenic routes, and plazas.
+        • Nature & Outdoor: prioritize parks, gardens, viewpoints, hikes, waterways, and natural attractions.
+        • Historical & Cultural: prioritize museums, monuments, temples, historic sites, architecture, galleries.
+        • Nightlife: prioritize well-known bars, clubs, live music venues, night markets, and late-night districts.
+        • Relaxation & Wellness: prioritize spas, hot springs, beaches, saunas, wellness centers, tea houses.
+
+    - If multiple preferences are selected, try to balance them naturally across the day's activities.
+    - All selected locations must still follow the strict rules below.
+
     STRICT RULES:
     1. Each place must have a valid "start_time" and "end_time".
     2. "start_time" and "end_time" must occur on the SAME day.
@@ -57,12 +73,24 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     4. Times must be in 24-hour format "HH:MM".
     5. Times must be chronological in the day's schedule (each place must start at or after the previous place ends).
     6. EVERY place must have a SPECIFIC and REAL name (e.g., "Louvre Museum", NOT "Downtown Area" or "Beach District").
-    7. The "address" must be a SPECIFIC, PRECISE, REAL address. 
-        - Do NOT give ranges or general zones (e.g., "5th Avenue Shops", "Central Park Area").
-        - Provide full detailed addresses like "123 Main St, City, State, Country".
+    7. PRIORITIZE FAMOUS, POPULAR, AND WIDELY KNOWN PLACES that are easy to find on real map services such as Mapbox.
+       - Avoid obscure, niche, or difficult-to-query locations.
+       - Use landmarks, major attractions, well-known museums, well-reviewed restaurants, etc.
     8. Do NOT include descriptions inside the "name" field.
     9. Do NOT invent vague or fictional venues — use well-known or plausible real places.
     10. The "notes" field must be a short description with a MAXIMUM of 200 characters.
+
+    ADDITIONAL PLANNING RULES:
+    11. Consider **geographic distance** between consecutive places.
+        - Prefer routes that minimize travel time.
+        - Avoid jumping back and forth across the city unnecessarily.
+        - Group nearby attractions together on the same day.
+    12. Include **meal-friendly restaurant stops** when appropriate.
+        - Add lunch stop around **11:30-13:30**.
+        - Add dinner stop around **17:30-19:30**.
+        - Restaurants must be well-known, popular, and easy to find on Mapbox.
+        - Do NOT invent fictional restaurants.
+    13. Restaurants must also follow all time rules (valid start/end, chronological ordering).
 
     Respond with ONLY a valid JSON array in the following format.
     Do not include any other text or markdown formatting (like ```json).
@@ -74,7 +102,6 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
         "places": [
           {{
             "name": "Name of the place",
-            "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
             "start_time": "HH:MM",
             "end_time": "HH:MM",
             "notes": "A brief note about this place (<= 200 characters)"
@@ -177,7 +204,7 @@ def create_trip_plan_from_ai(user, trip_data):
             print(f"    Searching for place '{search_place_name}'...")
             search_result = search_place(search_place_name, city, country)
             if not search_result:
-                print(f"    [Skipped] place '{search_place_name}': not found in map search.")
+                print(f"    [Skipped] place '{search_place_name}': not found in mapbox search.")
                 continue
 
             print(f"    Found place: {search_result['name']} at {search_result['full_address']} (mapbox_id={search_result['mapbox_id']})")
