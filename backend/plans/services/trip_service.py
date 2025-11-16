@@ -1,8 +1,7 @@
 from datetime import timedelta
 from ..models import Trip, Day
-from ..utils.fetch_image import fetch_image_url
-from ..utils.convert_coordinate import get_coordinate_from_address
-
+from ..utils.image_utils import fetch_image_url
+from ..utils.map_utils import get_coordinate_from_address
 
 def create_trip_with_days(user, validated_data):
     """

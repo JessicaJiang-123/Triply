@@ -5,9 +5,8 @@ from django.db.models import F
 from rest_framework.exceptions import PermissionDenied
 from ..models import Day, Place, Trip, RouteSegment, SharedPlace
 from ..serializers import PlaceSerializer
-from ..utils.fetch_image import fetch_image_url
-from ..utils.convert_coordinate import get_coordinate_from_address
-from ..utils.fetch_route_between_points import fetch_route_between_points
+from ..utils.image_utils import fetch_image_url
+from ..utils.map_utils import get_coordinate_from_address, fetch_route_between_points
 
 def get_trip_and_day_for_user(trip_id, day_id, user):
     """
