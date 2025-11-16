@@ -28,15 +28,6 @@ def create_place_for_day(data, day_obj):
     """
     Create a new Place for the given Day, adjusting orders and route segments as needed.
     """
-    # validate input data
-    input_serializer = PlaceSerializer(data=data)
-    input_serializer.is_valid(raise_exception=True)
-
-    # check if mapbox_id is provided
-    mapbox_id = data.get('mapbox_id', None)
-    if not mapbox_id:
-        raise ValueError("mapbox_id is required for a place.")
-
     start_time_str = data.get('start_time') or None
     new_start = None
     if start_time_str:
@@ -126,17 +117,19 @@ def create_place_for_day(data, day_obj):
                 coordinates=route_data['coordinates']
             )
 
-    # link (or create) the SharedPlace if mapbox_id is provided
-    shared_place, _ = SharedPlace.objects.get_or_create(
-        mapbox_id=mapbox_id,
-        defaults={
-            'name': place.name or '' # type: ignore
-        }
-    )
-    place.shared_place = shared_place # type: ignore
-    place.mapbox_id = mapbox_id # type: ignore
-    place.save() # type: ignore
-    place.refresh_from_db() # type: ignore
+    mapbox_id = data.get('mapbox_id', None)
+    if mapbox_id:
+        # link (or create) the SharedPlace if mapbox_id is provided
+        shared_place, _ = SharedPlace.objects.get_or_create(
+            mapbox_id=mapbox_id,
+            defaults={
+                'name': place.name or '' # type: ignore
+            }
+        )
+        place.shared_place = shared_place # type: ignore
+        place.mapbox_id = mapbox_id # type: ignore
+        place.save() # type: ignore
+        place.refresh_from_db() # type: ignore
 
     return place
 
@@ -144,15 +137,6 @@ def update_place_for_day(data, day_obj, place_id):
     """
     Update an existing Place for the given Day, adjusting orders and route segments as needed.
     """
-    # validate input data
-    serializer = PlaceSerializer(data=data)
-    serializer.is_valid(raise_exception=True)
-
-    # check if mapbox_id is provided
-    new_mapbox_id = data.get('mapbox_id', None)
-    if not new_mapbox_id:
-        raise ValueError("mapbox_id is required for a place.")
-
     place = get_object_or_404(Place, pk=place_id, day=day_obj)
 
     # Track whether name or image is updated
@@ -237,8 +221,9 @@ def update_place_for_day(data, day_obj, place_id):
                     }
                 )
 
+    new_mapbox_id = data.get('mapbox_id', None)
     # If mapbox_id provided and changed, update shared_place accordingly
-    if place.mapbox_id != new_mapbox_id:
+    if new_mapbox_id and place.mapbox_id != new_mapbox_id:
         # Rebind to the new SharedPlace
         shared_place, _ = SharedPlace.objects.get_or_create(
             mapbox_id=new_mapbox_id,
