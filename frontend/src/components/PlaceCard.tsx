@@ -16,6 +16,7 @@ type PlaceCardProps = {
   onPreviewComments?: (mapbox_id: string) => void;
   trip_id?: number;
   day_id?: number;
+  isOwner: boolean;
 };
 
 export default function PlaceCard({
@@ -32,6 +33,7 @@ export default function PlaceCard({
   day_id,
   mapbox_id,
   onPreviewComments,
+  isOwner,
 }: PlaceCardProps): ReactElement {
   const navigate = useNavigate();
 
@@ -133,27 +135,29 @@ export default function PlaceCard({
             </div>
 
             {/* Action buttons */}
-            <div className="mt-auto d-flex justify-content-end gap-2">
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={() =>
-                  navigate(
-                    `/trips/${trip_id}/days/${day_id}/places/${id}/edit-place`
-                  )
-                }
-              >
-                <i className="bi bi-pencil me-1"></i> Edit
-              </Button>
+            {isOwner && (
+              <div className="mt-auto d-flex justify-content-end gap-2">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() =>
+                    navigate(
+                      `/trips/${trip_id}/days/${day_id}/places/${id}/edit-place`
+                    )
+                  }
+                >
+                  <i className="bi bi-pencil me-1"></i> Edit
+                </Button>
 
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => id && onDelete && onDelete(id)}
-              >
-                <i className="bi bi-trash me-1"></i> Delete
-              </Button>
-            </div>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => id && onDelete && onDelete(id)}
+                >
+                  <i className="bi bi-trash me-1"></i> Delete
+                </Button>
+              </div>
+            )}
           </Card.Body>
         </Col>
       </Row>
