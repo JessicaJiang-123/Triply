@@ -13,7 +13,6 @@ class Trip(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
-    share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     image_url = models.CharField(max_length=1024, blank=True, null=True)
 
     def __str__(self):
@@ -126,3 +125,26 @@ class CommentImage(models.Model):
 
     def __str__(self):
         return f"Image for comment {self.comment.id} ({self.image_url})"
+    
+
+class ShareLink(models.Model):
+    # Model to represent shareable links for trips with permission levels
+    class PermissionLevel(models.TextChoices):
+        READ = 'read', 'Read-Only'
+        EDIT = 'edit', 'Editable'
+
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='share_links')
+    
+    # Use UUID4 to create a Unique UUID for the shareable link
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    
+    permission_level = models.CharField(
+        max_length=10,
+        choices=PermissionLevel.choices,
+        default=PermissionLevel.READ
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Link for {self.trip.name} ({self.PermissionLevel(self.permission_level).label})"
