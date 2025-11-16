@@ -40,6 +40,33 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     if client is None:
         print("ERROR: AI Client is not initialized. Cannot generate recommendations.")
         return None
+    
+    preference_descriptions = {
+        "Eating and Drinking": 
+            "Eating and Drinking: prioritize famous restaurants, cafes, food markets, and iconic local dishes.",
+        "Shopping":
+            "Shopping: prioritize popular malls, outlets, markets, shopping streets, and brand-name districts.",
+        "City Walk":
+            "City Walk: prioritize walkable neighborhoods, promenades, famous streets, scenic routes, and plazas.",
+        "Nature & Outdoor":
+            "Nature & Outdoor: prioritize parks, gardens, viewpoints, hikes, waterways, and natural attractions.",
+        "Historical & Cultural":
+            "Historical & Cultural: prioritize museums, monuments, temples, historic sites, architecture, galleries.",
+        "Nightlife":
+            "Nightlife: prioritize well-known bars, clubs, live music venues, night markets, and late-night districts.",
+        "Relaxation & Wellness":
+            "Relaxation & Wellness: prioritize spas, hot springs, beaches, saunas, wellness centers, tea houses.",
+    }
+
+    # Only include descriptions for preferences that the user selected
+    selected_pref_text = "\n".join(
+        f"• {preference_descriptions[p]}" 
+        for p in preferences 
+        if p in preference_descriptions
+    )
+
+    if not selected_pref_text:
+        selected_pref_text = "• No specific preferences provided. Choose balanced, popular activities."
 
     # construct the prompt
     prompt_contents = f"""
@@ -48,20 +75,13 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     
     Based on the following request, generate a travel plan for {city} spanning {num_days} day(s).
 
-    Travel Preferences: {', '.join(preferences)}
+    User Travel Preferences: {', '.join(preferences) if preferences else "None"}
 
     IMPORTANT:
     - Take the user's Travel Preferences into consideration **whenever they are provided**.
     - Preferences should meaningfully influence which places are selected.
-    - The supported preference categories are:
-
-        • Eating and Drinking: prioritize famous restaurants, cafes, food markets, and iconic local dishes.
-        • Shopping: prioritize popular malls, outlets, markets, shopping streets, and brand-name districts.
-        • City Walk: prioritize walkable neighborhoods, promenades, famous streets, scenic routes, and plazas.
-        • Nature & Outdoor: prioritize parks, gardens, viewpoints, hikes, waterways, and natural attractions.
-        • Historical & Cultural: prioritize museums, monuments, temples, historic sites, architecture, galleries.
-        • Nightlife: prioritize well-known bars, clubs, live music venues, night markets, and late-night districts.
-        • Relaxation & Wellness: prioritize spas, hot springs, beaches, saunas, wellness centers, tea houses.
+    - Selected preference categories are:
+    {selected_pref_text}
 
     - If multiple preferences are selected, try to balance them naturally across the day's activities.
     - All selected locations must still follow the strict rules below.
