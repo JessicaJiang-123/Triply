@@ -121,16 +121,13 @@ class PlaceForDayAPIView(APIView):
         
         _, day_obj = place_service.get_trip_and_day_for_user(trip_id, day_id, request.user)
 
-        try:
-            # If place_id is provided -> UPDATE instead of CREATE
-            if place_id:
-                place = place_service.update_place_for_day(request.data.copy(), day_obj, place_id)
-                status_code = status.HTTP_200_OK
-            else:
-                place = place_service.create_place_for_day(request.data.copy(), day_obj)
-                status_code = status.HTTP_201_CREATED
-        except (ValueError, ValidationError) as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # If place_id is provided -> UPDATE instead of CREATE
+        if place_id:
+            place = place_service.update_place_for_day(request.data.copy(), day_obj, place_id)
+            status_code = status.HTTP_200_OK
+        else:
+            place = place_service.create_place_for_day(request.data.copy(), day_obj)
+            status_code = status.HTTP_201_CREATED
         
         return Response(PlaceSerializer(place).data, status=status_code)
 
