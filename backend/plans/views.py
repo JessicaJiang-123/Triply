@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import F
 from datetime import date, timedelta
 from rest_framework.decorators import action
+from rest_framework.authentication import SessionAuthentication
 from .models import RouteSegment, Trip, Day, Place, PlaceComment, CommentImage, SharedPlace
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer, PlaceCommentSerializer, CommentImageSerializer
 
@@ -25,10 +26,12 @@ from .utils.fetch_route_between_points import fetch_route_between_points
 from .place_ops import create_place_for_day, update_place_for_day
 from .permissions import CanAccessTrip
 from .models import ShareLink
+from .link_auth import ShareLinkAuthentication
 
 
 class TripViewSet(viewsets.ModelViewSet):
     serializer_class = TripSerializer
+    authentication_classes = [SessionAuthentication, ShareLinkAuthentication]
 
     # Define permissions per action
     def get_permissions(self):
@@ -40,7 +43,9 @@ class TripViewSet(viewsets.ModelViewSet):
 
     # Define queryset based on the authenticated user
     def get_queryset(self):
-        return Trip.objects.filter(user=self.request.user).order_by('-created_at')
+        if self.action == 'list':
+            return Trip.objects.filter(user=self.request.user).order_by('-created_at')
+        return Trip.objects.all()
 
     def perform_create(self, serializer):
         data = getattr(self.request, "data", {})
@@ -56,7 +61,7 @@ class TripViewSet(viewsets.ModelViewSet):
 
         # Save the trip
         trip = serializer.save(
-            user=self.request.user,
+            # user=self.request.user,
             image_url=image_url,
             latitude=latitude,
             longitude=longitude
@@ -112,6 +117,7 @@ class DayForTripAPIView(APIView):
     GET: /api/plans/<trip_id>/days/<day_id>/
     """
 
+    authentication_classes = [SessionAuthentication, ShareLinkAuthentication]
     permission_classes = [CanAccessTrip]
 
     def get(self, request, trip_id, day_id):
@@ -132,7 +138,7 @@ class PlaceForDayAPIView(APIView):
     GET:             /api/plans/<trip_id>/days/<day_id>/places/<place_id>/
     DELETE:          /api/plans/<trip_id>/days/<day_id>/places/<place_id>/
     """
-
+    authentication_classes = [SessionAuthentication, ShareLinkAuthentication]
     permission_classes = [CanAccessTrip]
 
     @transaction.atomic

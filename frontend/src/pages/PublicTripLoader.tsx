@@ -37,6 +37,7 @@ export default function PublicTripLoader() {
         
         // Store the permission level in localStorage
         localStorage.setItem('share_permission', permission_level);
+        localStorage.setItem('active_share_token', uuid);
 
         // Redirect to the actual PlanDetailPage
         setLoading(false);

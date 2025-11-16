@@ -9,9 +9,14 @@ import PlanDetailPage from './pages/PlanDetailPage';
 import PublicTripLoader from './pages/PublicTripLoader';
 
 export default function App() {
-  const { currentUser } = useContext(AuthContext);
+  // const { currentUser } = useContext(AuthContext);
 
   const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+    const { currentUser, isLoading } = useContext(AuthContext);
+    if (isLoading) {
+      return <div>Loading User...</div>;
+    }
+    
     if (!currentUser) {
       return <Navigate to="/login" />;
     }

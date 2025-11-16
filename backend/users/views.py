@@ -13,6 +13,7 @@ def user_profile(request):
     extra_data = google_user.extra_data if google_user else {}
 
     return JsonResponse({
+        "id": request.user.id,
         "is_authenticated": True,
         "username": request.user.get_full_name() or request.user.username,
         "email": request.user.email,

@@ -4,7 +4,8 @@ import { AuthContext, type User } from './AuthContext';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(false);
+  // const [ready, setReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -20,7 +21,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Auth check failed:', error);
         setCurrentUser(null);
       } finally {
-        setReady(true);
+        // setReady(true);
+        setIsLoading(false);
       }
     };
 
@@ -28,12 +30,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // TODO: Show a loading spinner on Login Page
-  if (!ready) {
-    return <div>Loading...</div>;
-  }
+  // if (!isLoading) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
-    <AuthContext.Provider value={{ currentUser, setCurrentUser }}>
+    <AuthContext.Provider value={{ currentUser, setCurrentUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,7 +15,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 
 export default function PlanDetailPage(): ReactElement {
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser, isLoading: authLoading } = useContext(AuthContext);
   const [sharePermission, setSharePermission] = useState<string | null>(null);
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -30,8 +30,12 @@ export default function PlanDetailPage(): ReactElement {
   const [showShareModal, setShowShareModal] = useState(false);
   const navigate = useNavigate();
 
-  // fetch trip details to populate date bar
   useEffect(() => {
+    const activeToken = localStorage.getItem('active_share_token');
+    if (activeToken) {
+      console.log("Restoring active_share_token from localStorage:", activeToken);
+      axiosInstance.defaults.headers.common['X-Share-Token'] = activeToken;
+    }
     // Get share permission from localStorage
     const permission = localStorage.getItem('share_permission');
     setSharePermission(permission);
@@ -42,61 +46,136 @@ export default function PlanDetailPage(): ReactElement {
       return;
     }
 
-    // User is authenticated either by login or share link (same as before)
-    const fetchTrip = async () => {
-      if (!trip_id) return;
-      try {
-        const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
-        console.log('Fetched trip', res.data);
-        setTrip(res.data);
-      } catch (err) {
-        console.error('Failed to fetch trip', err);
-        if (axios.isAxiosError(err) && err.response) {
-          setError(err.response.data.detail || 'Fetch trip details failed');
-        } else {
-          setError('Fetch trip details failed');
-        }
-      }
-    };
-    fetchTrip();
-
-    // when the user leaves this page
-    return () => {
-      console.log("Cleaning up share permissions...");
-      localStorage.removeItem('share_permission');
-      delete axiosInstance.defaults.headers.common['X-Share-Token'];
-    }
-
-  }, [trip_id, currentUser, navigate]);
-
-  // fetch places for current day
-  useEffect(() => {
-    const fetchPlaces = async () => {
+    // User is authenticated either by login or share link
+    const fetchAllData = async () => {
       if (!trip_id || !day_id) return;
+
+      setLoading(true);
+      setError(null);
+
       try {
-        const res = await axiosInstance.get(
+        const tripPromise = axiosInstance.get(`/api/plans/trips/${trip_id}/`);
+        const dayPromise = axiosInstance.get(
           `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
-        console.log('Fetched places for day', res.data);
-        const fetchedPlaces: Place[] = res.data.places || [];
-        const fetchedRoutes: RouteSegment[] = res.data.routes || [];
+
+        const [tripResponse, dayResponse] = await Promise.all([
+          tripPromise,
+          dayPromise,
+        ]);
+
+        console.log('Fetched trip', tripResponse.data);
+        setTrip(tripResponse.data);
+
+        console.log('Fetched places for day', dayResponse.data);
+        const fetchedPlaces: Place[] = dayResponse.data.places || [];
+        const fetchedRoutes: RouteSegment[] = dayResponse.data.routes || [];
         setPlaces(fetchedPlaces);
         setRoutes(fetchedRoutes);
+        
         setSelectedDayId(Number(day_id));
         setSelectedMapboxId(null);
+
       } catch (err) {
-        console.error('Failed to fetch day places', err);
+        console.error('Failed to fetch page data', err);
         if (axios.isAxiosError(err) && err.response) {
-          setError(err.response.data.detail || 'Fetch day places failed');
+          setError(err.response.data.detail || 'Failed to fetch page data');
         } else {
-          setError('Fetch day places failed');
+          setError('Failed to fetch page data');
         }
       } finally {
         setLoading(false);
       }
     };
-    fetchPlaces();
-  }, [trip_id, day_id]);
+
+    if (!authLoading) {
+      fetchAllData();
+    }
+
+    // return () => {
+    //   console.log("Cleaning up share permissions...");
+    //   localStorage.removeItem('share_permission');
+    //   delete axiosInstance.defaults.headers.common['X-Share-Token'];
+    // }
+    
+  }, [trip_id, day_id, navigate, authLoading, currentUser]);
+
+  useEffect(() => {
+    return () => {
+      console.log("Cleaning up share permissions when LEAVING page...");
+      localStorage.removeItem('share_permission');
+      localStorage.removeItem('active_share_token');
+      delete axiosInstance.defaults.headers.common['X-Share-Token'];
+    }
+  }, []);
+
+  // // fetch trip details to populate date bar
+  // useEffect(() => {
+  //   // Get share permission from localStorage
+  //   const permission = localStorage.getItem('share_permission');
+  //   setSharePermission(permission);
+
+  //   // If not logged in and not have a share permission token
+  //   if (!currentUser && !permission) {
+  //     navigate('/login');
+  //     return;
+  //   }
+
+  //   // User is authenticated either by login or share link (same as before)
+  //   const fetchTrip = async () => {
+  //     if (!trip_id) return;
+  //     try {
+  //       const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
+  //       console.log('Fetched trip', res.data);
+  //       setTrip(res.data);
+  //     } catch (err) {
+  //       console.error('Failed to fetch trip', err);
+  //       if (axios.isAxiosError(err) && err.response) {
+  //         setError(err.response.data.detail || 'Fetch trip details failed');
+  //       } else {
+  //         setError('Fetch trip details failed');
+  //       }
+  //     }
+  //   };
+  //   fetchTrip();
+
+  //   // when the user leaves this page
+  //   return () => {
+  //     console.log("Cleaning up share permissions...");
+  //     localStorage.removeItem('share_permission');
+  //     delete axiosInstance.defaults.headers.common['X-Share-Token'];
+  //   }
+
+  // }, [trip_id, currentUser, navigate]);
+
+  // // fetch places for current day
+  // useEffect(() => {
+  //   const fetchPlaces = async () => {
+  //     if (!trip_id || !day_id) return;
+  //     try {
+  //       const res = await axiosInstance.get(
+  //         `/api/plans/trips/${trip_id}/days/${day_id}/`
+  //       );
+  //       console.log('Fetched places for day', res.data);
+  //       const fetchedPlaces: Place[] = res.data.places || [];
+  //       const fetchedRoutes: RouteSegment[] = res.data.routes || [];
+  //       setPlaces(fetchedPlaces);
+  //       setRoutes(fetchedRoutes);
+  //       setSelectedDayId(Number(day_id));
+  //       setSelectedMapboxId(null);
+  //     } catch (err) {
+  //       console.error('Failed to fetch day places', err);
+  //       if (axios.isAxiosError(err) && err.response) {
+  //         setError(err.response.data.detail || 'Fetch day places failed');
+  //       } else {
+  //         setError('Fetch day places failed');
+  //       }
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchPlaces();
+  // }, [trip_id, day_id]);
 
   // Delete place handler
   async function handleDeletePlace(placeId: number) {
@@ -148,11 +227,14 @@ export default function PlanDetailPage(): ReactElement {
           .map((r) => r.coordinates)
       : routes.map((r) => r.coordinates);
 
-  const isLoggedInOwner = currentUser ? (currentUser as CurrentUser).id === trip?.owner.id : false;
+  const isLoggedInOwner = currentUser && trip?.owner
+  ? Number((currentUser as CurrentUser).id) === Number(trip.owner.id)
+  : false;
+
   const isEditLinkUser = sharePermission === 'edit';
   const canEdit = isLoggedInOwner || isEditLinkUser;
 
-  if (loading) return <div>Loading...</div>;
+  if (authLoading || loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!trip) return <div>No trip found.</div>;
 
