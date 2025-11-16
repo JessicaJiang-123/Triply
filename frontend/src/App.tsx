@@ -34,27 +34,15 @@ export default function App() {
         <Route path="/public/trip/:uuid" element={<PublicTripLoader />} />
         <Route
           path="/trips/:trip_id/days/:day_id"
-          element={
-            <ProtectedRoute>
-              <PlanDetailPage />
-            </ProtectedRoute>
-          }
+          element={<PlanDetailPage />}
         />
         <Route
           path="/trips/:trip_id/days/:day_id/add-place"
-          element={
-            <ProtectedRoute>
-              <AddPlacePage />
-            </ProtectedRoute>
-          }
+          element={<AddPlacePage />}
         />
         <Route
           path="/trips/:trip_id/days/:day_id/places/:place_id/edit-place"
-          element={
-            <ProtectedRoute>
-              <AddPlacePage />
-            </ProtectedRoute>
-          }
+          element={<AddPlacePage />}
         />
         <Route
           path="/add-trip"
