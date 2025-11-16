@@ -2,23 +2,31 @@ from datetime import datetime
 from django.shortcuts import get_object_or_404
 from django.db import models as dj_models
 from django.db.models import F
-from rest_framework import status
-from rest_framework.response import Response
-from .models import Place, RouteSegment, SharedPlace
-from .serializers import PlaceSerializer
-from .utils.fetch_image import fetch_image_url
-from .utils.convert_coordinate import get_coordinate_from_address
-from .utils.fetch_route_between_points import fetch_route_between_points
+from rest_framework.exceptions import PermissionDenied
+from ..models import Day, Place, Trip, RouteSegment, SharedPlace
+from ..serializers import PlaceSerializer
+from ..utils.image_utils import fetch_image_url
+from ..utils.map_utils import get_coordinate_from_address, fetch_route_between_points
+
+def get_trip_and_day_for_user(trip_id, day_id, user):
+    """
+    Fetch Trip and Day objects.
+    Raises:
+        Http404 if trip/day does not exist
+        PermissionDenied if the trip does not belong to the user
+    Returns (trip, day_obj)
+    """
+    trip = get_object_or_404(Trip, pk=trip_id)
+    if trip.user != user:
+        raise PermissionDenied("Not allowed to access this trip.")
+
+    day_obj = get_object_or_404(Day, pk=day_id, trip=trip)
+    return trip, day_obj
 
 def create_place_for_day(data, day_obj):
     """
     Create a new Place for the given Day, adjusting orders and route segments as needed.
     """
-    # check if mapbox_id is provided
-    mapbox_id = data.get('mapbox_id', None)
-    if not mapbox_id:
-        return Response({"detail": "mapbox_id is required for a place."}, status=status.HTTP_400_BAD_REQUEST)
-
     start_time_str = data.get('start_time') or None
     new_start = None
     if start_time_str:
@@ -59,10 +67,8 @@ def create_place_for_day(data, day_obj):
     data["latitude"] = latitude
     
     serializer = PlaceSerializer(data=data)
-    if not serializer.is_valid():
-        print(f"ERROR: PlaceSerializer validation failed. Details: {serializer.errors}")
-        return Response({"detail": "Invalid place data."}, status=status.HTTP_400_BAD_REQUEST)
-        
+    serializer.is_valid(raise_exception=True)
+    
     place = serializer.save(day=day_obj, order=assign_order)
 
     prev_place = (
@@ -110,8 +116,9 @@ def create_place_for_day(data, day_obj):
                 coordinates=route_data['coordinates']
             )
 
-    # link (or create) the SharedPlace if mapbox_id is provided
+    mapbox_id = data.get('mapbox_id', None)
     if mapbox_id:
+        # link (or create) the SharedPlace if mapbox_id is provided
         shared_place, _ = SharedPlace.objects.get_or_create(
             mapbox_id=mapbox_id,
             defaults={
@@ -123,17 +130,12 @@ def create_place_for_day(data, day_obj):
         place.save() # type: ignore
         place.refresh_from_db() # type: ignore
 
-    return Response(PlaceSerializer(place).data, status=status.HTTP_201_CREATED)
+    return place
 
 def update_place_for_day(data, day_obj, place_id):
     """
     Update an existing Place for the given Day, adjusting orders and route segments as needed.
     """
-    # check if mapbox_id is provided
-    new_mapbox_id = data.get('mapbox_id', None)
-    if not new_mapbox_id:
-        return Response({"detail": "mapbox_id is required for a place."}, status=status.HTTP_400_BAD_REQUEST)
-
     place = get_object_or_404(Place, pk=place_id, day=day_obj)
 
     # Track whether name or image is updated
@@ -170,7 +172,7 @@ def update_place_for_day(data, day_obj, place_id):
     
     # If start_time changed, we may need to reorder places
     if start_time_changed:
-        reorder_places_for_day(day_obj, place.id) # type: ignore
+        reorder_places_for_day(day_obj)
         place.refresh_from_db() # refresh to get updated order if changed
 
     # If name or address changed, we may need to recompute route segments
@@ -218,25 +220,24 @@ def update_place_for_day(data, day_obj, place_id):
                     }
                 )
 
+    new_mapbox_id = data.get('mapbox_id', None)
     # If mapbox_id provided and changed, update shared_place accordingly
-    if new_mapbox_id:
-        if place.mapbox_id != new_mapbox_id:
-            # Rebind to the new SharedPlace
-            shared_place, _ = SharedPlace.objects.get_or_create(
-                mapbox_id=new_mapbox_id,
-                defaults={
-                    'name': data.get('name', place.name) or ''
-                }
-            )
-            place.shared_place = shared_place # type: ignore
-            place.mapbox_id = new_mapbox_id
-            place.save() # type: ignore
-            place.refresh_from_db() # type: ignore
+    if new_mapbox_id and place.mapbox_id != new_mapbox_id:
+        # Rebind to the new SharedPlace
+        shared_place, _ = SharedPlace.objects.get_or_create(
+            mapbox_id=new_mapbox_id,
+            defaults={
+                'name': data.get('name', place.name) or ''
+            }
+        )
+        place.shared_place = shared_place # type: ignore
+        place.mapbox_id = new_mapbox_id
+        place.save() # type: ignore
+        place.refresh_from_db() # type: ignore
 
-    serializer = PlaceSerializer(place)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return place
 
-def reorder_places_for_day(day_obj, place_id):
+def reorder_places_for_day(day_obj):
     """
     Reorder places by start_time/order, then only update RouteSegments
     for newly changed adjacency pairs (based on place.id).
@@ -293,3 +294,58 @@ def reorder_places_for_day(day_obj, place_id):
                 travel_time_min=route_data['duration'] / 60.0,
                 coordinates=route_data['coordinates']
             )
+
+def delete_place_for_day(day_obj, place_id):
+    """
+    Delete a place inside a given day, clean up related route segments,
+    and maintain route continuity + reorder all remaining places.
+    Returns: list of remaining places ordered by updated order.
+    """
+    place = get_object_or_404(Place, pk=place_id, day=day_obj)
+
+    deleted_order = place.order
+
+    prev_place = (
+        Place.objects.filter(day=day_obj, order=deleted_order - 1).first()
+    )
+    next_place = (
+        Place.objects.filter(day=day_obj, order=deleted_order + 1).first()
+    )
+
+    # if deleting from the middle, remove old route segments involving this place
+    if prev_place:
+        RouteSegment.objects.filter(
+            from_place=prev_place,
+            to_place=place
+        ).delete()
+
+    if next_place:
+        RouteSegment.objects.filter(
+            from_place=place,
+            to_place=next_place
+        ).delete()
+
+    # if prev and next exist, create new route segment between them
+    if prev_place and next_place:
+        route_data = fetch_route_between_points(
+            [prev_place.longitude, prev_place.latitude],
+            [next_place.longitude, next_place.latitude]
+        )
+        if route_data:
+            RouteSegment.objects.create(
+                route_id=f"route-{prev_place.id}-{next_place.id}", # type: ignore
+                from_place=prev_place,
+                to_place=next_place,
+                distance_km=route_data['distance'] / 1000.0,
+                travel_time_min=route_data['duration'] / 60.0,
+                coordinates=route_data['coordinates']
+            )
+
+    place.delete()
+
+    # reorder remaining places
+    Place.objects.filter(day=day_obj, order__gt=deleted_order).update(
+        order=F('order') - 1)
+
+    # Return ordered list of remaining places
+    return Place.objects.filter(day=day_obj).order_by('order')

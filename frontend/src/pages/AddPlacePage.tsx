@@ -125,6 +125,24 @@ export default function AddPlacePage() {
       return;
     }
 
+    // Validate address field and mapbox_id field
+    if (!formData.address.trim() || !formData.mapbox_id.trim()) {
+      setErrorMsg('Please select a valid place with an address.');
+      return;
+    }
+
+    // Validate start time
+    if (!formData.start_time) {
+      setErrorMsg('Please provide a valid start time.');
+      return;
+    }
+
+    // Validate end time
+    if (!formData.end_time) {
+      setErrorMsg('Please provide a valid end time.');
+      return;
+    }
+
     // Validate time
     if (formData.end_time < formData.start_time) {
       setErrorMsg('End time must be after start time.');
