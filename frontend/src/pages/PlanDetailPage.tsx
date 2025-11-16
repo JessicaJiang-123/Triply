@@ -58,6 +58,7 @@ export default function PlanDetailPage(): ReactElement {
         setPlaces(fetchedPlaces);
         setRoutes(fetchedRoutes);
         setSelectedDayId(Number(day_id));
+        setSelectedRouteId(null);
         setSelectedMapboxId(null);
       } catch (err) {
         console.error('Failed to fetch day places', err);
