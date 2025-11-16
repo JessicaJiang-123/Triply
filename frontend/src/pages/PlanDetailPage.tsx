@@ -10,6 +10,7 @@ import Map from '../components/Map';
 import { useRef } from 'react';
 import type { Place, RouteSegment, Trip } from '../types/tripTypes';
 import axios from 'axios';
+import UrlShareModal from '../components/UrlShareModal';
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
@@ -22,6 +23,7 @@ export default function PlanDetailPage(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const dateRowRef = useRef<HTMLDivElement | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const navigate = useNavigate();
 
   // fetch trip details to populate date bar
@@ -109,6 +111,10 @@ export default function PlanDetailPage(): ReactElement {
     if (selectedDayId) {
       navigate(`/trips/${trip_id}/days/${selectedDayId}/add-place`);
     }
+  };
+
+  const handleShare = () => {
+    setShowShareModal(true);
   };
 
   /** Determine which routes to show on the map */
@@ -201,6 +207,16 @@ export default function PlanDetailPage(): ReactElement {
               }
             >
               <i className="bi bi-caret-right-fill fs-5"></i>
+            </Button>
+            {/* --- Share Button --- */}
+            <Button
+              variant="light"
+              size="sm"
+              className="ms-2 d-flex align-items-center justify-content-center"
+              onClick={handleShare}
+              title="Share this trip"
+            >
+              <i className="bi bi-share-fill fs-5 text-primary"></i>
             </Button>
           </div>
 
@@ -314,6 +330,11 @@ export default function PlanDetailPage(): ReactElement {
           )}
         </div>
       </div>
+      <UrlShareModal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        tripId={trip ? trip.id : null}
+      />
     </>
   );
 }
