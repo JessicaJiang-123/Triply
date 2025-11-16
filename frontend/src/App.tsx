@@ -6,6 +6,7 @@ import TravelPlanPage from './pages/TravelPlanPage';
 import AddTripPage from './pages/AddTripPage';
 import AddPlacePage from './pages/AddPlacePage';
 import PlanDetailPage from './pages/PlanDetailPage';
+import PublicTripLoader from './pages/PublicTripLoader';
 
 export default function App() {
   const { currentUser } = useContext(AuthContext);
@@ -30,6 +31,7 @@ export default function App() {
           }
         />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/public/trip/:uuid" element={<PublicTripLoader />} />
         <Route
           path="/trips/:trip_id/days/:day_id"
           element={
