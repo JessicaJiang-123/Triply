@@ -117,7 +117,7 @@ class PlaceForDayAPIView(APIView):
         # validate request data
         serializer = PlaceSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({"detail": "Invalid place data."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
         _, day_obj = place_service.get_trip_and_day_for_user(trip_id, day_id, request.user)
 
