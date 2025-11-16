@@ -6,7 +6,7 @@ import NavigationBar from '../components/NavigationBar';
 import { Button } from 'react-bootstrap';
 import PlaceCard from '../components/PlaceCard';
 import PlaceCommentPanel from '../components/PlaceCommentPanel';
-import Map from '../components/Map';
+import MapComponent from '../components/MapComponent';
 import { useRef } from 'react';
 import type { Place, RouteSegment, Trip } from '../types/tripTypes';
 import axios from 'axios';
@@ -318,7 +318,7 @@ export default function PlanDetailPage(): ReactElement {
               />
             </div>
           ) : (
-            <Map
+            <MapComponent
               places={places}
               center={[trip.longitude, trip.latitude]}
               routes={displayedRoutes}
