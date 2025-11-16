@@ -11,7 +11,7 @@ type MapProps = {
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
-const Map: React.FC<MapProps> = ({ places, center, routes }) => {
+const MapComponent: React.FC<MapProps> = ({ places, center, routes }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
@@ -38,6 +38,14 @@ const Map: React.FC<MapProps> = ({ places, center, routes }) => {
         { enableHighAccuracy: true, timeout: 5000 }
       );
     });
+  }
+
+  function offsetCoordinate(
+    lngLat: [number, number],
+    index: number
+  ): [number, number] {
+    const offset = 0.00005; // ~5m shift
+    return [lngLat[0] + offset * index, lngLat[1] + offset * index];
   }
 
   useEffect(() => {
@@ -104,8 +112,23 @@ const Map: React.FC<MapProps> = ({ places, center, routes }) => {
           (p) => p.latitude !== undefined && p.longitude !== undefined
         );
 
+        // Track how many places share the same coordinate
+        const coordMap = new Map<string, number>();
+
         // Add each place as a marker
         validPlaces.forEach((place) => {
+          const key = `${place.latitude},${place.longitude}`;
+          const duplicateCount = coordMap.get(key) ?? 0;
+          coordMap.set(key, duplicateCount + 1);
+
+          let lng = place.longitude!;
+          let lat = place.latitude!;
+
+          // If multiple places share the same coordinate -> offset them
+          if (duplicateCount > 0) {
+            [lng, lat] = offsetCoordinate([lng, lat], duplicateCount);
+          }
+
           const el = document.createElement('div');
           el.className = 'mapbox-marker';
           el.style.width = '28px';
@@ -135,7 +158,7 @@ const Map: React.FC<MapProps> = ({ places, center, routes }) => {
           );
 
           new mapboxgl.Marker(el)
-            .setLngLat([place.longitude!, place.latitude!])
+            .setLngLat([lng, lat])
             .setPopup(popup)
             .addTo(map);
         });
@@ -213,4 +236,4 @@ const Map: React.FC<MapProps> = ({ places, center, routes }) => {
   );
 };
 
-export default Map;
+export default MapComponent;
