@@ -175,3 +175,4 @@ class PlaceCommentSerializer(serializers.ModelSerializer):
             return None
         return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone') }
     
+    
