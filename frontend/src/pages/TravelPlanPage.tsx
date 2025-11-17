@@ -17,6 +17,7 @@ const TravelPlanPage: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharingTripId, setSharingTripId] = useState<number | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [selectedTab, setSelectedTab] = useState<'owned' | 'shared'>('owned');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -107,7 +108,25 @@ const TravelPlanPage: React.FC = () => {
       >
         {/* Fixed Header */}
         <div className="flex-shrink-0 text-center py-4">
-          <h1 className="fw-bold mb-0">My Travel Plans</h1>
+          <div className="d-flex flex-column align-items-center gap-3">
+            <h1 className="fw-bold mb-0">My Travel Plans</h1>
+            <div className="btn-group" role="group" aria-label="Trip filters">
+              <button
+                type="button"
+                className={`btn ${selectedTab === 'owned' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setSelectedTab('owned')}
+              >
+                Created by me
+              </button>
+              <button
+                type="button"
+                className={`btn ${selectedTab === 'shared' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setSelectedTab('shared')}
+              >
+                Shared with me
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Scrollable Trip Cards Area */}
@@ -120,9 +139,13 @@ const TravelPlanPage: React.FC = () => {
         >
           <div style={{ width: '100%', maxWidth: '1200px' }}>
             <Row xs={1} md={2} className="g-5">
-              {trips.map((trip) => {
-                const isOwner = currentUser ? currentUser.id === trip.owner.id : false;
-                return (
+              {trips
+                .filter((trip) => {
+                  if (!currentUser) return false;
+                  const isOwner = currentUser.id === trip.owner.id;
+                  return selectedTab === 'owned' ? isOwner : !isOwner;
+                })
+                .map((trip) => (
                   <Link
                     key={trip.id}
                     to={`/trips/${trip.id}/days/${trip.firstDayId}`}
@@ -138,12 +161,11 @@ const TravelPlanPage: React.FC = () => {
                       start_date={trip.start_date}
                       end_date={trip.end_date}
                       image_url={trip.image_url || '/login_bg.jpg'}
-                      isOwner={isOwner}
+                      isOwner={currentUser?.id === trip.owner.id ? true : false}
                       ownerName={trip.owner.username}
                     />
                   </Link>
-                );
-              })}
+                ))}
             </Row>
 
             {trips.length === 0 && (
