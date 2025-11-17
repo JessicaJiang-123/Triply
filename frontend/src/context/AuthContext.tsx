@@ -1,15 +1,9 @@
 import { createContext } from 'react';
-
-interface User {
-  username: string;
-  email: string;
-  picture: string;
-  is_authenticated: boolean;
-}
+import type { CurrentUser } from '../types/tripTypes';
 
 interface AuthContextType {
-  currentUser: User | null;
-  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  currentUser: CurrentUser | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<CurrentUser | null>>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -17,4 +11,4 @@ export const AuthContext = createContext<AuthContextType>({
   setCurrentUser: () => {},
 });
 
-export type { User, AuthContextType };
+export type { AuthContextType };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
@@ -8,9 +8,10 @@ import PlaceCard from '../components/PlaceCard';
 import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import MapComponent from '../components/MapComponent';
 import { useRef } from 'react';
-import type { Place, RouteSegment, Trip, CurrentUser} from '../types/tripTypes';
+import type { Place, RouteSegment, Trip } from '../types/tripTypes';
 import ShareTripModal from '../components/ShareTripModal';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
@@ -24,29 +25,17 @@ export default function PlanDetailPage(): ReactElement {
   const dateRowRef = useRef<HTMLDivElement | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const { currentUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   // fetch trip details to populate date bar
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTrip = async () => {
       if (!trip_id) return;
-      setLoading(true);
-      setError(null);
-
       try {
-        const mePromise = axiosInstance.get<CurrentUser>('/api/user/profile/');
-        const tripPromise = axiosInstance.get<Trip>(`/api/plans/trips/${trip_id}/`);
-        const [meResponse, tripResponse] = await Promise.all([mePromise, tripPromise]);
-        if (meResponse.data.is_authenticated) {
-          setCurrentUser(meResponse.data);
-          console.log('Fetched current user', meResponse.data);
-        } else {
-          setError('User not authenticated');
-        }
-
-        setTrip(tripResponse.data);
-        console.log('Fetched trip', tripResponse.data);
+        const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
+        console.log('Fetched trip', res.data);
+        setTrip(res.data);
       } catch (err) {
         console.error('Failed to fetch trip', err);
         if (axios.isAxiosError(err) && err.response) {
@@ -56,7 +45,7 @@ export default function PlanDetailPage(): ReactElement {
         }
       }
     };
-    fetchData();
+    fetchTrip();
   }, [trip_id]);
 
   // fetch places for current day
@@ -142,7 +131,7 @@ export default function PlanDetailPage(): ReactElement {
     setShowShareModal(true);
   };
 
-    /** Determine which routes to show on the map */
+  /** Determine which routes to show on the map */
   const displayedRoutes =
     selectedRouteId !== null
       ? routes
@@ -237,18 +226,17 @@ export default function PlanDetailPage(): ReactElement {
             </Button>
 
             {/* Share Button */}
-              {isOwner && (
-                <Button
-                  variant="light"
-                  size="sm"
-                  // ... (other props)
-                  onClick={handleShare}
-                  title="Share your travel plan"
-                >
-                  <i className="bi bi-share-fill fs-5 text-primary"></i>
-                </Button>
-              )}
-
+            {isOwner && (
+              <Button
+                variant="light"
+                size="sm"
+                // ... (other props)
+                onClick={handleShare}
+                title="Share your travel plan"
+              >
+                <i className="bi bi-share-fill fs-5 text-primary"></i>
+              </Button>
+            )}
           </div>
 
           {/* Scrollable list */}
