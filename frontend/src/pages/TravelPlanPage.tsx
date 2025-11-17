@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { Container, Button, Row, Alert } from 'react-bootstrap';
 import NavigationBar from '../components/NavigationBar';
 import TripCard from '../components/TripCard';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
-import type { CurrentUser, Trip } from '../types/tripTypes';
+import type { Trip } from '../types/tripTypes';
 import ShareTripModal from '../components/ShareTripModal';
+import { AuthContext } from '../context/AuthContext';
 
 const TravelPlanPage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,29 +17,17 @@ const TravelPlanPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharingTripId, setSharingTripId] = useState<number | null>(null);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const { currentUser } = useContext(AuthContext);
   const [selectedTab, setSelectedTab] = useState<'owned' | 'shared'>('owned');
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchTrips = async () => {
       setLoading(true);
       setError(null);
       try {
-        // const response = await axiosInstance.get('/api/plans/trips/');
-        const mePromise = axiosInstance.get<CurrentUser>('/api/user/profile/');
-        const tripsPromise = axiosInstance.get<Trip[]>('/api/plans/trips/');
-        const [meResponse, tripsResponse] = await Promise.all([
-          mePromise,
-          tripsPromise,
-        ]);
-        if (meResponse.data.is_authenticated) {
-            setCurrentUser(meResponse.data);
-            setTrips(tripsResponse.data);
-        } else {
-            setError('User not authenticated. Please log in.');
-        }
-        // console.log('Fetched trips:', response.data);
-        // setTrips(response.data);
+        const response = await axiosInstance.get('/api/plans/trips/');
+        console.log('Fetched trips:', response.data);
+        setTrips(response.data);
       } catch (err) {
         console.error('Error fetching trips:', err);
         setError('Failed to load your trips. Are you logged in?');
@@ -47,7 +36,7 @@ const TravelPlanPage: React.FC = () => {
       }
     };
 
-    fetchData();
+    fetchTrips();
   }, []);
 
   const handleAddTrip = () => {
