@@ -115,10 +115,18 @@ const TripCard: React.FC<TripCardProps> = ({
             {isOwner ? (
               // If owner, show all buttons
               <div className="mt-auto text-end d-flex gap-2 justify-content-end">
-                <Button variant="outline-primary" size="sm" onClick={handleShareClick}>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={handleShareClick}
+                >
                   <i className="bi bi-share me-1"></i> Share
                 </Button>
-                <Button variant="outline-danger" size="sm" onClick={handleDeleteClick}>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={handleDeleteClick}
+                >
                   <i className="bi bi-trash me-1"></i> Delete
                 </Button>
               </div>
@@ -132,7 +140,6 @@ const TripCard: React.FC<TripCardProps> = ({
               </div>
             )}
             {/* --- End condition rendering logic --- */}
-            
           </Card.Body>
         </Col>
       </Row>
