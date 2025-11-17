@@ -1,5 +1,16 @@
 // Define TypeScript types for Trip, Day, Place, and RouteSegment
 
+export type SimpleUser = {
+  id: number;
+  username: string;
+  email: string;
+};
+
+export type CurrentUser = SimpleUser & {
+  is_authenticated: boolean;
+  picture?: string;
+};
+
 export type Place = {
   id: number;
   name: string;
@@ -35,6 +46,8 @@ export type Trip = {
   share_uuid: string;
   image_url?: string;
   firstDayId?: number;
+  owner: SimpleUser;
+  shared_users: SimpleUser[];
 };
 
 export type RouteSegment = {

@@ -8,7 +8,8 @@ import PlaceCard from '../components/PlaceCard';
 import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import MapComponent from '../components/MapComponent';
 import { useRef } from 'react';
-import type { Place, RouteSegment, Trip } from '../types/tripTypes';
+import type { Place, RouteSegment, Trip, CurrentUser} from '../types/tripTypes';
+import ShareTripModal from '../components/ShareTripModal';
 import axios from 'axios';
 
 export default function PlanDetailPage(): ReactElement {
@@ -22,16 +23,30 @@ export default function PlanDetailPage(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const dateRowRef = useRef<HTMLDivElement | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const navigate = useNavigate();
 
   // fetch trip details to populate date bar
   useEffect(() => {
-    const fetchTrip = async () => {
+    const fetchData = async () => {
       if (!trip_id) return;
+      setLoading(true);
+      setError(null);
+
       try {
-        const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
-        console.log('Fetched trip', res.data);
-        setTrip(res.data);
+        const mePromise = axiosInstance.get<CurrentUser>('/api/user/profile/');
+        const tripPromise = axiosInstance.get<Trip>(`/api/plans/trips/${trip_id}/`);
+        const [meResponse, tripResponse] = await Promise.all([mePromise, tripPromise]);
+        if (meResponse.data.is_authenticated) {
+          setCurrentUser(meResponse.data);
+          console.log('Fetched current user', meResponse.data);
+        } else {
+          setError('User not authenticated');
+        }
+
+        setTrip(tripResponse.data);
+        console.log('Fetched trip', tripResponse.data);
       } catch (err) {
         console.error('Failed to fetch trip', err);
         if (axios.isAxiosError(err) && err.response) {
@@ -41,7 +56,7 @@ export default function PlanDetailPage(): ReactElement {
         }
       }
     };
-    fetchTrip();
+    fetchData();
   }, [trip_id]);
 
   // fetch places for current day
@@ -123,13 +138,19 @@ export default function PlanDetailPage(): ReactElement {
     }
   };
 
-  /** Determine which routes to show on the map */
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+    /** Determine which routes to show on the map */
   const displayedRoutes =
     selectedRouteId !== null
       ? routes
           .filter((r) => r.route_id === selectedRouteId)
           .map((r) => r.coordinates)
       : routes.map((r) => r.coordinates);
+
+  const isOwner = currentUser ? currentUser.id === trip?.owner.id : false;
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -214,6 +235,20 @@ export default function PlanDetailPage(): ReactElement {
             >
               <i className="bi bi-caret-right-fill fs-5"></i>
             </Button>
+
+            {/* Share Button */}
+              {isOwner && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  // ... (other props)
+                  onClick={handleShare}
+                  title="Share your travel plan"
+                >
+                  <i className="bi bi-share-fill fs-5 text-primary"></i>
+                </Button>
+              )}
+
           </div>
 
           {/* Scrollable list */}
@@ -242,6 +277,7 @@ export default function PlanDetailPage(): ReactElement {
                     onDelete={handleDeletePlace}
                     trip_id={trip.id}
                     day_id={Number(day_id)}
+                    isOwner={isOwner}
                   />
                   {/* Clickable distance + duration line */}
                   {index < routes.length && (
@@ -279,22 +315,24 @@ export default function PlanDetailPage(): ReactElement {
           </div>
 
           {/* Fixed bottom Add button */}
-          <div
-            className="p-3 border-top flex-shrink-0"
-            style={{
-              backgroundColor: '#fff',
-              boxShadow: '0 -2px 8px rgba(0,0,0,0.05)',
-              zIndex: 10,
-            }}
-          >
-            <Button
-              className="w-100 d-flex align-items-center justify-content-center"
-              variant="primary"
-              onClick={handleAddPlace}
+          {isOwner && (
+            <div
+              className="p-3 border-top flex-shrink-0"
+              style={{
+                backgroundColor: '#fff',
+                boxShadow: '0 -2px 8px rgba(0,0,0,0.05)',
+                zIndex: 10,
+              }}
             >
-              <i className="bi bi-plus-circle me-2"></i> Add new place
-            </Button>
-          </div>
+              <Button
+                className="w-100 d-flex align-items-center justify-content-center"
+                variant="primary"
+                onClick={handleAddPlace}
+              >
+                <i className="bi bi-plus-circle me-2"></i> Add new place
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Right Column — Comment panel only */}
@@ -327,6 +365,13 @@ export default function PlanDetailPage(): ReactElement {
           )}
         </div>
       </div>
+
+      {/* Share Trip Modal */}
+      <ShareTripModal
+        show={showShareModal}
+        onHide={() => setShowShareModal(false)}
+        tripId={trip ? trip.id : null}
+      />
     </>
   );
 }

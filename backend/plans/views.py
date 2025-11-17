@@ -4,8 +4,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
+from django.db.models import Q
 from rest_framework.decorators import action
-
+from django.contrib.auth.models import User
 from .services import ai_planner_service, place_service, trip_service
 from .models import Trip, Day, Place, PlaceComment, CommentImage, SharedPlace
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer, PlaceCommentSerializer, CommentImageSerializer
@@ -17,32 +18,63 @@ from urllib.parse import urljoin, urlparse, unquote
 import os
 import uuid
 
-# Owner-only retrieve view
-class IsOwnerOrReadOnly(permissions.BasePermission):
+# Use for other APIView, custom permission to allow owners full access and shared users read-only access
+class IsOwnerOrSharedReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        # Write permissions are only allowed to the owner of the trip.
-        if hasattr(obj, 'user'):
-            return obj.user == request.user
-        if hasattr(obj, 'trip'):
-            return obj.trip.user == request.user
-        if hasattr(obj, 'day'):
-            return obj.day.trip.user == request.user
+        # find the related Trip object from Trip, Day, or Place
+        trip = None
+        if isinstance(obj, Trip):
+            trip = obj
+        elif hasattr(obj, 'trip'):
+            trip = obj.trip
+        elif hasattr(obj, 'day'):
+            trip = obj.day.trip
+        
+        if not trip:
+            return False
+
+        # allow owner full access
+        if trip.user == request.user:
+            return True
+
+        # allow shared users read-only access
+        if request.user and request.user.is_authenticated:
+            is_shared = trip.shared_users.filter(pk=request.user.pk).exists()
+            # SAFE_METHODS are GET, HEAD, OPTIONS that do not modify data
+            if is_shared and request.method in permissions.SAFE_METHODS:
+                return True
+        
         return False
 
+# Use for PlanShareAPIView
+class IsOwnerOrInSharedList(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # allow owner full access
+        if obj.user == request.user:
+            return True
+        
+        # allow users in shared_users list
+        return obj.shared_users.filter(pk=request.user.pk).exists()
+    
 
 class TripViewSet(viewsets.ModelViewSet):
     """
     A ViewSet for viewing and editing the user's trips.
     """
     serializer_class = TripSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSharedReadOnly]
 
     def get_queryset(self):
         """
         This view should return a list of all the trips
         for the currently authenticated user.
         """
-        return Trip.objects.filter(user=self.request.user).order_by('-created_at')
+        user = self.request.user
+        # use Q object to include trips owned by user or shared with user
+        return Trip.objects.filter(Q(user=user) | Q(shared_users=user)).distinct().order_by('-created_at')
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -54,20 +86,61 @@ class TripViewSet(viewsets.ModelViewSet):
     def share_trip(self, request, pk=None):
         trip = self.get_object()
         
-        return Response({'detail': 'Sharing endpoint not implemented yet.'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        # only owner can share the trip
+        if trip.user != request.user:
+            return Response(
+                {"detail": "Only the trip owner can share this plan."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        email = request.data.get('email')
+        if not email:
+            return Response(
+                {"detail": "Email is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # find user by email (iexact = case insensitive)
+            user_to_share = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": f"User with email {email} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # prevent sharing with oneself
+        if user_to_share == request.user:
+            return Response(
+                {"detail": "You cannot share a trip with yourself."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # add user to shared_users list
+        trip.shared_users.add(user_to_share)
+        trip.save()
+
+        # return share UUID
+        return Response(
+            {
+                'message': f'Trip successfully shared with {email}.',
+                'share_uuid': trip.share_uuid
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class PlanDetailAPIView(generics.RetrieveAPIView):
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSharedReadOnly]
 
 
 class PlanShareAPIView(generics.RetrieveAPIView):
     lookup_field = "share_uuid"
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrInSharedList]
 
 
 class DayForTripAPIView(APIView):
@@ -77,14 +150,17 @@ class DayForTripAPIView(APIView):
     GET: /api/plans/<trip_id>/days/<day_id>/
     """
 
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSharedReadOnly]
 
     def get(self, request, trip_id, day_id):
         trip = get_object_or_404(Trip, pk=trip_id)
 
         # permission check: must be owner
-        if trip.user != request.user:
-            return Response({"detail": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
+        for permission in self.get_permissions():
+            if not permission.has_object_permission(request, self, trip):
+                self.permission_denied(
+                    request, message=getattr(permission, 'message', None)
+                )
 
         day_obj = get_object_or_404(Day, pk=day_id, trip=trip)
         serializer = DaySerializer(day_obj)
@@ -102,7 +178,7 @@ class PlaceForDayAPIView(APIView):
     DELETE:          /api/plans/<trip_id>/days/<day_id>/places/<place_id>/
     """
 
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSharedReadOnly]
 
     @transaction.atomic
     def post(self, request, trip_id, day_id, place_id=None):
@@ -132,6 +208,7 @@ class PlaceForDayAPIView(APIView):
         Retrieve a specific place for the specified day
         """
         _, day_obj = place_service.get_trip_and_day_for_user(trip_id, day_id, request.user)
+
         place = get_object_or_404(Place, pk=place_id, day=day_obj)
         serializer = PlaceSerializer(place)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -154,7 +231,7 @@ class AIGeneratePlanView(APIView):
     POST: /api/plans/generate-ai-plan/
     """
     
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):

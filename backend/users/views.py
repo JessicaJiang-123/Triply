@@ -14,6 +14,7 @@ def user_profile(request):
 
     return JsonResponse({
         "is_authenticated": True,
+        "id": request.user.id,
         "username": request.user.get_full_name() or request.user.username,
         "email": request.user.email,
         "picture": extra_data.get("picture"),

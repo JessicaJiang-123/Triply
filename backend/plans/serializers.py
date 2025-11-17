@@ -1,5 +1,12 @@
 from rest_framework import serializers
 from .models import Trip, Day, Place, RouteSegment, PlaceComment, CommentImage
+from django.contrib.auth.models import User
+
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
 
 
 class RouteSegmentSerializer(serializers.ModelSerializer):
@@ -82,14 +89,16 @@ class DaySerializer(serializers.ModelSerializer):
 
 class TripSerializer(serializers.ModelSerializer):
     days = DaySerializer(many=True, read_only=True)
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    # user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    owner = SimpleUserSerializer(source='user', read_only=True)
     firstDayId = serializers.SerializerMethodField()
+    shared_users = SimpleUserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Trip
         fields = [
             "id",
-            "user",
+            "owner",
             "name",
             "destination_city",
             "latitude",
@@ -102,6 +111,7 @@ class TripSerializer(serializers.ModelSerializer):
             "image_url",
             "preferences",
             "firstDayId",
+            "shared_users",
         ]
 
     def validate(self, data):
@@ -164,4 +174,5 @@ class PlaceCommentSerializer(serializers.ModelSerializer):
         if not u:
             return None
         return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone') }
+    
     

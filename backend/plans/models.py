@@ -14,8 +14,9 @@ class Trip(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    image_url = models.CharField(max_length=1024, blank=True, null=True)
+    image_url = models.URLField(max_length=1024, blank=True, null=True)
     preferences = models.JSONField(default=list, blank=True) # List of user travel preferences
+    shared_users = models.ManyToManyField(User, related_name='shared_trips', blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.user})"
@@ -70,6 +71,10 @@ class Place(models.Model):
     address = models.CharField(max_length=512, blank=True)
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['day', 'order'], name='unique_place_order_per_day')
+        ]
         ordering = ['order']
 
     def __str__(self):

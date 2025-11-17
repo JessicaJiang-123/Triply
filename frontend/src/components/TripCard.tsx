@@ -9,6 +9,9 @@ interface TripCardProps {
   end_date: string;
   image_url: string;
   onDelete: (id: number) => void;
+  onShare: (id: number) => void;
+  isOwner: boolean;
+  ownerName: string;
 }
 
 const TripCard: React.FC<TripCardProps> = ({
@@ -19,11 +22,19 @@ const TripCard: React.FC<TripCardProps> = ({
   end_date,
   image_url,
   onDelete,
+  onShare,
+  isOwner,
+  ownerName,
 }) => {
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onDelete(id);
+  };
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onShare(id);
   };
 
   // Format location to be concise
@@ -100,16 +111,28 @@ const TripCard: React.FC<TripCardProps> = ({
               </Card.Text>
             )}
 
-            {/* --- Delete Button --- */}
-            <div className="mt-auto text-end">
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={handleDeleteClick}
-              >
-                <i className="bi bi-trash me-1"></i> Delete
-              </Button>
-            </div>
+            {/* --- Start condition rendering logic --- */}
+            {isOwner ? (
+              // If owner, show all buttons
+              <div className="mt-auto text-end d-flex gap-2 justify-content-end">
+                <Button variant="outline-primary" size="sm" onClick={handleShareClick}>
+                  <i className="bi bi-share me-1"></i> Share
+                </Button>
+                <Button variant="outline-danger" size="sm" onClick={handleDeleteClick}>
+                  <i className="bi bi-trash me-1"></i> Delete
+                </Button>
+              </div>
+            ) : (
+              // If not owner, show "Shared by"
+              <div className="mt-auto text-end">
+                <small className="text-muted" style={{ fontSize: '0.9rem' }}>
+                  <i className="bi bi-person-check-fill me-1"></i>
+                  Shared by <strong>{ownerName}</strong>
+                </small>
+              </div>
+            )}
+            {/* --- End condition rendering logic --- */}
+            
           </Card.Body>
         </Col>
       </Row>
