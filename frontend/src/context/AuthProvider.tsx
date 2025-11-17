@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import axiosInstance from '../api/axiosInstance';
-import { AuthContext, type User } from './AuthContext';
+import { AuthContext } from './AuthContext';
+import type { CurrentUser } from '../types/tripTypes';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
