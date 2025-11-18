@@ -243,11 +243,11 @@ class AIGeneratePlanView(APIView):
         if not input_serializer.is_valid():
             return Response({"detail": input_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
-        trip = ai_planner_service.create_trip_plan_from_ai(request.user, input_serializer.validated_data)
+        trip, error_message = ai_planner_service.create_trip_plan_from_ai(request.user, input_serializer.validated_data)
 
         if not trip:
             return Response(
-                {"detail": "AI planner is busy or not available now, please try again later."},
+                {"detail": error_message or "AI planner is busy or not available now, please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
                 
