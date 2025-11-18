@@ -195,8 +195,8 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['fullname', 'picture']
 
 LOGIN_URL = '/oauth/login/google-oauth2/'
 if DEBUG:
-    LOGIN_REDIRECT_URL = f"http://{ALLOWED_HOSTS[0]}/trips/"
-    LOGOUT_REDIRECT_URL = f"http://{ALLOWED_HOSTS[0]}/login/"
+    LOGIN_REDIRECT_URL = f"http://{ALLOWED_HOSTS[0]}:5173/trips/"
+    LOGOUT_REDIRECT_URL = f"http://{ALLOWED_HOSTS[0]}:5173/login/"
 else:
     LOGIN_REDIRECT_URL = f"https://{ALLOWED_HOSTS[0]}/trips/"
     LOGOUT_REDIRECT_URL = f"https://{ALLOWED_HOSTS[0]}/login/"
