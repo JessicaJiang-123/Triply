@@ -67,14 +67,16 @@ MIDDLEWARE = [
 ]
 
 # CORS
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in config.get(
-        "Django", "CORS_ALLOW_ORIGINS", fallback="http://localhost:5173"
-    ).split(",")
-]
+# NOT NEEDED FOR PRODUCTION (FRONTEND AND BACKEND ARE ON SAME DOMAIN)
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in config.get(
+            "Django", "CORS_ALLOW_ORIGINS", fallback="http://localhost:5173"
+        ).split(",")
+    ]
 
-CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOW_CREDENTIALS = True
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [
@@ -163,6 +165,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = "/home/ubuntu/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -191,5 +194,9 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {'prompt': 'select_account'}
 SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['fullname', 'picture']
 
 LOGIN_URL = '/oauth/login/google-oauth2/'
-LOGIN_REDIRECT_URL = "http://localhost:5173/trips/"
-LOGOUT_REDIRECT_URL = "http://localhost:5173/login/"
+if DEBUG:
+    LOGIN_REDIRECT_URL = f"http://{ALLOWED_HOSTS[0]}:5173/trips/"
+    LOGOUT_REDIRECT_URL = f"http://{ALLOWED_HOSTS[0]}:5173/login/"
+else:
+    LOGIN_REDIRECT_URL = f"https://{ALLOWED_HOSTS[0]}/trips/"
+    LOGOUT_REDIRECT_URL = f"https://{ALLOWED_HOSTS[0]}/login/"

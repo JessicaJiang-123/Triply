@@ -2,8 +2,15 @@ import OAuthButton from './OAuthButton';
 import './HeroModal.css';
 
 export default function HeroModal() {
+  const DEBUG = import.meta.env.VITE_DEBUG === 'true';
+
   // OAuth endpoints
-  const googleHref = `${import.meta.env.VITE_API_BASE_URL || ''}/oauth/login/google-oauth2/`;
+  let googleHref = '';
+  if (DEBUG) {
+    googleHref = `${import.meta.env.VITE_API_BASE_URL || ''}/oauth/login/google-oauth2/`;
+  } else {
+    googleHref = '/oauth/login/google-oauth2/';
+  }
 
   return (
     <div className="hero-wrapper">
