@@ -117,7 +117,41 @@ export default function AddTripPage() {
       return;
     }
 
-    // Validate dates
+    const start = new Date(formData.start_date);
+    const end = new Date(formData.end_date);
+
+    // Check valid start date parsing
+    if (Number.isNaN(start.getTime())) {
+      setErrorMsg('Start date is invalid.');
+      return;
+    }
+
+    // Check valid end date parsing
+    if (Number.isNaN(end.getTime())) {
+      setErrorMsg('End date is invalid.');
+      return;
+    }
+
+    // Validate year ranges
+    const MIN_YEAR = 2024;
+    const MAX_YEAR = 2030;
+
+    console.log('Start year:', start.getFullYear());
+    console.log('End year:', end.getFullYear());
+
+    if (start.getFullYear() < MIN_YEAR || start.getFullYear() > MAX_YEAR) {
+      setErrorMsg(
+        `Start date year must be between ${MIN_YEAR} and ${MAX_YEAR}.`
+      );
+      return;
+    }
+
+    if (end.getFullYear() < MIN_YEAR || end.getFullYear() > MAX_YEAR) {
+      setErrorMsg(`End date year must be between ${MIN_YEAR} and ${MAX_YEAR}.`);
+      return;
+    }
+
+    // Validate dates order
     if (new Date(formData.end_date) < new Date(formData.start_date)) {
       setErrorMsg('End date cannot be earlier than start date.');
       return;
