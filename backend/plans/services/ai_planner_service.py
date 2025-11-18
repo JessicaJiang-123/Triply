@@ -174,6 +174,14 @@ def create_trip_plan_from_ai(user, trip_data):
     """
     Create Trip, Days and create Place objects from AI-generated recommendations.
     """
+    # Calculate number of days
+    num_days = (trip_data['end_date'] - trip_data['start_date']).days + 1
+
+    # if num_days is larger than 5, return None
+    if num_days > 5:
+        print("Trip with more than 5 days is not supported for AI planning.")
+        return None, "Trip with more than 5 days is not supported for AI planning."
+
     # Create the Trip and Day objects
     trip = create_trip_with_days(user, trip_data)
 
@@ -183,7 +191,6 @@ def create_trip_plan_from_ai(user, trip_data):
     preferences = trip_data.get('preferences', [])
 
     days = list(trip.days.order_by('order')) # type: ignore
-    num_days = len(days)
 
     # Generate AI recommendations
     recommendations = generate_trip_recommendations(
@@ -196,7 +203,7 @@ def create_trip_plan_from_ai(user, trip_data):
     if not recommendations:
         trip.delete()
         print("Failed to generate trip recommendations from AI.")
-        return None
+        return None, "Failed to generate trip recommendations from AI."
     
     print("AI Recommendations:", json.dumps(recommendations, indent=2))
     
@@ -248,4 +255,4 @@ def create_trip_plan_from_ai(user, trip_data):
             create_place_for_day(place_input_data, day_obj)
             print(f"    [Added] place '{search_result['name']}' to day {day_number}.")
 
-    return trip
+    return trip, None
