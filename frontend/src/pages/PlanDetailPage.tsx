@@ -330,11 +330,12 @@ export default function PlanDetailPage(): ReactElement {
             backgroundColor: '#fafafa',
             overflow: 'hidden', // keep right pane static
             display: 'flex',
+            maxWidth: '65%',
           }}
         >
           {/* Map / Place Detail */}
           {selectedMapboxId ? (
-            <div style={{ flex: 1, padding: 16 }}>
+            <div className="w-100">
               <PlaceCommentPanel
                 mapboxId={selectedMapboxId}
                 placeName={
