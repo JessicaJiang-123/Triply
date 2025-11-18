@@ -25,15 +25,15 @@ config.read(config_path)
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config.get("django", "SECRET_KEY", fallback="dev-insecure")
+SECRET_KEY = config.get("Django", "SECRET_KEY", fallback="dev-insecure")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config.getboolean("django", "DEBUG", fallback=True)
+DEBUG = config.getboolean("Django", "DEBUG", fallback=True)
 
 ALLOWED_HOSTS = [
     host.strip()
     for host in config.get(
-        "django", "ALLOWED_HOSTS", fallback="localhost,127.0.0.1"
+        "Django", "ALLOWED_HOSTS", fallback="localhost,127.0.0.1"
     ).split(",")
 ]
 
@@ -70,7 +70,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in config.get(
-        "django", "CORS_ALLOW_ORIGINS", fallback="http://localhost:5173"
+        "Django", "CORS_ALLOW_ORIGINS", fallback="http://localhost:5173"
     ).split(",")
 ]
 
@@ -80,7 +80,7 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in config.get(
-        "django", "CSRF_TRUSTED_ORIGINS", fallback="http://localhost:5173"
+        "Django", "CSRF_TRUSTED_ORIGINS", fallback="http://localhost:5173"
     ).split(",")
 ]
 
@@ -107,7 +107,7 @@ WSGI_APPLICATION = "triply.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-db_engine = config.get("database", "ENGINE", fallback="django.db.backends.sqlite3")
+db_engine = config.get("Database", "ENGINE", fallback="django.db.backends.sqlite3")
 
 if db_engine.endswith("sqlite3"):
     DATABASES = {
@@ -121,9 +121,9 @@ else:
         "default": {
             'OPTIONS': {'charset': 'utf8mb4'},
             "ENGINE": db_engine,
-            "NAME": config.get("database", "NAME"),
-            "USER": config.get("database", "USER"),
-            "PASSWORD": config.get("database", "PASSWORD"),
+            "NAME": config.get("Database", "NAME"),
+            "USER": config.get("Database", "USER"),
+            "PASSWORD": config.get("Database", "PASSWORD"),
         }
     }
 
