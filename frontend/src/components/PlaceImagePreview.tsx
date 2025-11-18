@@ -6,10 +6,12 @@ import type { CommentImage } from '../types/tripTypes';
 type ImagePreviewProps = {
   mapboxId?: string | null;
   placeName?: string;
+  refreshKey?: number;
 };
 
 export default function PlaceImagePreview({
   mapboxId,
+  refreshKey,
 }: ImagePreviewProps): ReactElement | null {
   const [images, setImages] = useState<CommentImage[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,7 @@ export default function PlaceImagePreview({
     return () => {
       mounted = false;
     };
-  }, [mapboxId]);
+  }, [mapboxId, refreshKey]);
 
   // When images === null => no mapboxId selected; render nothing
   if (!mapboxId) return null;
