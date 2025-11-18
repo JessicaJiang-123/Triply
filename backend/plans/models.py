@@ -71,10 +71,6 @@ class Place(models.Model):
     address = models.CharField(max_length=512, blank=True)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['day', 'order'], name='unique_place_order_per_day')
-        ]
         ordering = ['order']
 
     def __str__(self):

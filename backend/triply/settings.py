@@ -185,8 +185,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config.get("GoogleOAuth2", "client_id")
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config.get("GoogleOAuth2", "client_secret")
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config.get("GoogleOAuth2", "CLIENT_ID")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config.get("GoogleOAuth2", "CLIENT_SECRET")
 SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {'prompt': 'select_account'}
 SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ['fullname', 'picture']
 
