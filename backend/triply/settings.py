@@ -121,9 +121,9 @@ else:
         "default": {
             'OPTIONS': {'charset': 'utf8mb4'},
             "ENGINE": db_engine,
-            "NAME": config.get("Database", "NAME"),
-            "USER": config.get("Database", "USER"),
-            "PASSWORD": config.get("Database", "PASSWORD"),
+            "NAME": config.get("MySQL", "NAME"),
+            "USER": config.get("MySQL", "USER"),
+            "PASSWORD": config.get("MySQL", "PASSWORD"),
         }
     }
 
