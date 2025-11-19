@@ -343,32 +343,13 @@ class PlaceCommentAPIView(APIView):
 
         # All validations passed — create comment and image records
         with transaction.atomic():
-            # try to determine an avatar URL for the comment author
-            avatar_url = None
-            try:
-                google_user = request.user.social_auth.filter(provider="google-oauth2").first()
-            except Exception:
-                google_user = None
-            if google_user:
-                avatar_url = google_user.extra_data.get("picture")
-
-            # fallback: use user's profile.avatar if available (Profile.avatar should be an ImageField)
-            if not avatar_url:
-                profile = getattr(request.user, 'profile', None)
-                if profile is not None and getattr(profile, 'avatar', None):
-                    try:
-                        avatar_url = request.build_absolute_uri(profile.avatar.url)
-                    except Exception:
-                        # if build_absolute_uri fails, use relative url
-                        avatar_url = getattr(profile.avatar, 'url', None)
-
-            comment = PlaceComment.objects.create(shared_place=shared_place, user=request.user, text=text, author_avatar_url=avatar_url)
+            comment = PlaceComment.objects.create(shared_place=shared_place, user=request.user, text=text)
             created_images = []
             for url in validated_urls:
                 img = CommentImage.objects.create(comment=comment, user=request.user, image_url=url)
                 created_images.append(img)
 
-        comment_data = PlaceCommentSerializer(comment, context={'request': request}).data
+        comment_data = PlaceCommentSerializer(comment).data
         images_data = CommentImageSerializer(created_images, many=True).data
         return Response({"comment": comment_data, "images": images_data}, status=status.HTTP_201_CREATED)
     

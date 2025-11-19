@@ -1,6 +1,7 @@
 import { Card } from 'react-bootstrap';
-import { useState, type ReactElement } from 'react';
+import { useContext, type ReactElement } from 'react';
 import type { CommentImage, PlaceComment } from '../types/tripTypes';
+import { AuthContext } from '../context/AuthContext';
 
 type CommentCardProps = {
   comment: PlaceComment;
@@ -9,10 +10,9 @@ type CommentCardProps = {
 export default function CommentCard({
   comment,
 }: CommentCardProps): ReactElement {
-  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const { currentUser } = useContext(AuthContext);
 
   const authorName = comment.author?.username ?? 'Someone';
-  const avatarSrc = comment.author_avatar_url ?? null;
   const text = comment.text;
   const createdAt = comment.created_at;
   const images: CommentImage[] = comment.images ?? [];
@@ -42,32 +42,12 @@ export default function CommentCard({
             style={{ width: 40, height: 40, flex: '0 0 auto' }}
             aria-hidden
           >
-            {avatarSrc && !avatarLoadFailed ? (
-              <img
-                src={avatarSrc}
-                alt="User avatar"
-                className="w-100 h-100"
-                style={{
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                  display: 'block',
-                }}
-                onError={() => setAvatarLoadFailed(true)}
-                onLoad={() => setAvatarLoadFailed(false)}
-              />
-            ) : (
-              // initials fallback
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  lineHeight: '40px',
-                  textAlign: 'center',
-                }}
-              >
-                {authorName ? authorName.charAt(0).toUpperCase() : '?'}
-              </div>
-            )}
+            <img
+              src={currentUser?.picture}
+              alt="User avatar"
+              className="w-100 h-100"
+              style={{ objectFit: 'cover', borderRadius: '50%' }}
+            />
           </div>
 
           {/* author name */}

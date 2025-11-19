@@ -8,12 +8,7 @@ import PlaceCard from '../components/PlaceCard';
 import PlaceCommentPanel from '../components/PlaceCommentPanel';
 import MapComponent from '../components/MapComponent';
 import { useRef } from 'react';
-import type {
-  Place,
-  RouteSegment,
-  Trip,
-  CurrentUser,
-} from '../types/tripTypes';
+import type { Place, RouteSegment, Trip, CurrentUser} from '../types/tripTypes';
 import ShareTripModal from '../components/ShareTripModal';
 import axios from 'axios';
 
@@ -41,13 +36,8 @@ export default function PlanDetailPage(): ReactElement {
 
       try {
         const mePromise = axiosInstance.get<CurrentUser>('/api/user/profile/');
-        const tripPromise = axiosInstance.get<Trip>(
-          `/api/plans/trips/${trip_id}/`
-        );
-        const [meResponse, tripResponse] = await Promise.all([
-          mePromise,
-          tripPromise,
-        ]);
+        const tripPromise = axiosInstance.get<Trip>(`/api/plans/trips/${trip_id}/`);
+        const [meResponse, tripResponse] = await Promise.all([mePromise, tripPromise]);
         if (meResponse.data.is_authenticated) {
           setCurrentUser(meResponse.data);
           console.log('Fetched current user', meResponse.data);
@@ -152,7 +142,7 @@ export default function PlanDetailPage(): ReactElement {
     setShowShareModal(true);
   };
 
-  /** Determine which routes to show on the map */
+    /** Determine which routes to show on the map */
   const displayedRoutes =
     selectedRouteId !== null
       ? routes
@@ -247,17 +237,18 @@ export default function PlanDetailPage(): ReactElement {
             </Button>
 
             {/* Share Button */}
-            {isOwner && (
-              <Button
-                variant="light"
-                size="sm"
-                // ... (other props)
-                onClick={handleShare}
-                title="Share your travel plan"
-              >
-                <i className="bi bi-share-fill fs-5 text-primary"></i>
-              </Button>
-            )}
+              {isOwner && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  // ... (other props)
+                  onClick={handleShare}
+                  title="Share your travel plan"
+                >
+                  <i className="bi bi-share-fill fs-5 text-primary"></i>
+                </Button>
+              )}
+
           </div>
 
           {/* Scrollable list */}
