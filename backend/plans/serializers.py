@@ -173,6 +173,16 @@ class PlaceCommentSerializer(serializers.ModelSerializer):
         u = getattr(obj, 'user', None)
         if not u:
             return None
-        return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone') }
-    
-    
+        avatar_url = None
+        profile = getattr(u, 'profile', None)
+        if profile and getattr(profile, 'avatar', None):
+            req = self.context.get('request')
+            if req:
+                avatar_url = req.build_absolute_uri(profile.avatar.url)
+            else:
+                avatar_url = getattr(profile.avatar, 'url', None)
+        
+        # fallback to recorded google url if no saved avatar
+        if not avatar_url and profile:
+            avatar_url = getattr(profile, 'google_avatar_url', None)
+        return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone'), 'avatar': avatar_url }
