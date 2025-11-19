@@ -86,15 +86,19 @@ export default function CommentCard({
         {/* Thumbnails */}
         {images.length > 0 && (
           <div className="d-flex align-items-start mb-1">
-            {images.map((img, idx) => (
+            {images.map((img) => (
               <div
                 key={img.id}
-                className={idx === 0 ? 'me-2' : ''}
                 style={{
-                  width: 150,
+                  flex: '0 0 auto',
+                  width: 150, 
                   height: 100,
                   borderRadius: 12,
                   overflow: 'hidden',
+                  position: 'relative',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                  background: '#f6f6f6',
+                  marginRight: 12,
                 }}
               >
                 <img
@@ -103,6 +107,7 @@ export default function CommentCard({
                   className="w-100 h-100"
                   style={{ objectFit: 'cover', display: 'block', cursor: 'pointer' }}
                   onClick={() => setLightboxUrl(img.image_url)}
+                  loading="lazy"
                 />
               </div>
             ))}
