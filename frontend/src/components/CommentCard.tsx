@@ -1,6 +1,7 @@
 import { Card } from 'react-bootstrap';
 import { useState,type ReactElement } from 'react';
 import type { CommentImage, PlaceComment } from '../types/tripTypes';
+import ImageLightbox from './ImageLightBox'
 
 type CommentCardProps = {
   comment: PlaceComment;
@@ -16,6 +17,7 @@ export default function CommentCard({
   const text = comment.text;
   const createdAt = comment.created_at;
   const images: CommentImage[] = comment.images ?? [];
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Format date (fallback to raw string if parsing fails)
   let dateLabel = createdAt;
@@ -99,7 +101,8 @@ export default function CommentCard({
                   src={img.image_url}
                   alt={`Comment image ${img.id}`}
                   className="w-100 h-100"
-                  style={{ objectFit: 'cover', display: 'block' }}
+                  style={{ objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                  onClick={() => setLightboxUrl(img.image_url)}
                 />
               </div>
             ))}
@@ -109,6 +112,8 @@ export default function CommentCard({
         {/* Date */}
         <div className="text-muted small">{dateLabel}</div>
       </Card.Body>
-    </Card>
+      {/* render Lightbox */}
+      <ImageLightbox show={!!lightboxUrl} url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+    </Card>  
   );
 }
