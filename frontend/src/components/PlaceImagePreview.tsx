@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import type { CommentImage } from '../types/tripTypes';
+import ImageLightbox from './ImageLightBox'
 
 type ImagePreviewProps = {
   mapboxId?: string | null;
@@ -15,6 +16,7 @@ export default function PlaceImagePreview({
 }: ImagePreviewProps): ReactElement | null {
   const [images, setImages] = useState<CommentImage[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!mapboxId) {
@@ -107,11 +109,13 @@ export default function PlaceImagePreview({
               src={img.image_url}
               alt={`place-img-${img.id || idx}`}
               className="img-fluid h-100 w-100"
-              style={{ objectFit: 'cover' }}
+              style={{ objectFit: 'cover', cursor: 'pointer' }}
+              onClick={() => setLightboxUrl(img.image_url)}
             />
           </div>
         ))}
       </div>
+      <ImageLightbox show={!!lightboxUrl} url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
     </div>
   );
 }
