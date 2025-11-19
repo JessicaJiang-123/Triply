@@ -72,6 +72,7 @@ export type PlaceComment = {
   created_at: string;
   author: { id: number; username: string } | null;
   images?: CommentImage[];
+  author_avatar_url?: string | null;
 };
 
 export type CommentImage = {

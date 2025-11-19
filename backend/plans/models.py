@@ -110,6 +110,7 @@ class PlaceComment(models.Model):
         User, on_delete=models.CASCADE, related_name='place_comments')
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    author_avatar_url = models.URLField(max_length=1024, blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']
