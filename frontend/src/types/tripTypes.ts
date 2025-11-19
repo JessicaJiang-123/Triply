@@ -70,7 +70,7 @@ export type PlaceComment = {
   mapbox_id: string;
   text: string;
   created_at: string;
-  author: { id: number; username: string } | null;
+  author: { id: number; username: string; avatar: string } | null;
   images?: CommentImage[];
 };
 

@@ -1,7 +1,6 @@
 import { Card } from 'react-bootstrap';
-import { useContext, type ReactElement } from 'react';
+import { useState,type ReactElement } from 'react';
 import type { CommentImage, PlaceComment } from '../types/tripTypes';
-import { AuthContext } from '../context/AuthContext';
 
 type CommentCardProps = {
   comment: PlaceComment;
@@ -10,9 +9,10 @@ type CommentCardProps = {
 export default function CommentCard({
   comment,
 }: CommentCardProps): ReactElement {
-  const { currentUser } = useContext(AuthContext);
 
   const authorName = comment.author?.username ?? 'Someone';
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const authorAvatar =  comment.author?.avatar ?? null;
   const text = comment.text;
   const createdAt = comment.created_at;
   const images: CommentImage[] = comment.images ?? [];
@@ -42,12 +42,32 @@ export default function CommentCard({
             style={{ width: 40, height: 40, flex: '0 0 auto' }}
             aria-hidden
           >
-            <img
-              src={currentUser?.picture}
-              alt="User avatar"
-              className="w-100 h-100"
-              style={{ objectFit: 'cover', borderRadius: '50%' }}
-            />
+            {authorAvatar && !avatarFailed ? (
+              <img
+                src={authorAvatar}
+                alt="User avatar"
+                className="w-100 h-100"
+                style={{
+                  objectFit: 'cover',
+                  borderRadius: '50%',
+                  display: 'block',
+                }}
+                onError={() => setAvatarFailed(true)}
+                onLoad={() => setAvatarFailed(false)}
+              />
+            ) : (
+              // initials fallback
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  lineHeight: '40px',
+                  textAlign: 'center',
+                }}
+              >
+                {authorName ? authorName.charAt(0).toUpperCase() : '?'}
+              </div>
+            )}
           </div>
 
           {/* author name */}
