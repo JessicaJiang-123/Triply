@@ -61,7 +61,7 @@ export default function PlaceCommentPanel({
           <AddCommentForm
             mapboxId={mapboxId}
             onPosted={() => {
-              // bump refreshKey in parent to make CommentList and Image Preview refetch
+              // bump refreshKey in parent to make CommentList refetch
               setRefresh((r) => r + 1);
             }}
           />

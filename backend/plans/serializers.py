@@ -173,13 +173,6 @@ class PlaceCommentSerializer(serializers.ModelSerializer):
         u = getattr(obj, 'user', None)
         if not u:
             return None
-        picture = None
-        try:
-            google = u.social_auth.filter(provider="google-oauth2").first()
-            if google and getattr(google, 'extra_data', None):
-                picture = google.extra_data.get('picture')
-        except Exception:
-            # defensively ignore any unexpected issues accessing social_auth
-            picture = None
-
-        return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone'),'picture': picture }
+        return { 'id': getattr(u, 'id', None), 'username': getattr(u, 'username', 'Someone') }
+    
+    
