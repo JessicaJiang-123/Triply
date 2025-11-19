@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import type { CommentImage } from '../types/tripTypes';
-import ImageLightbox from './ImageLightBox'
+import ImageLightbox from './ImageLightBox';
 
 type ImagePreviewProps = {
   mapboxId?: string | null;
@@ -115,7 +115,11 @@ export default function PlaceImagePreview({
           </div>
         ))}
       </div>
-      <ImageLightbox show={!!lightboxUrl} url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      <ImageLightbox
+        show={!!lightboxUrl}
+        url={lightboxUrl}
+        onClose={() => setLightboxUrl(null)}
+      />
     </div>
   );
 }

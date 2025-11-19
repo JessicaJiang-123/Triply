@@ -35,7 +35,11 @@ export default function PlaceCommentPanel({
         ></button>
       </div>
 
-      <PlaceImagePreview mapboxId={mapboxId} placeName={placeName} refreshKey={refresh} />
+      <PlaceImagePreview
+        mapboxId={mapboxId}
+        placeName={placeName}
+        refreshKey={refresh}
+      />
 
       <div style={{ marginTop: 12 }} className="d-flex flex-column">
         <h5 className="mb-3">Real Comments</h5>

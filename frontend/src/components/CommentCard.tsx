@@ -1,7 +1,7 @@
 import { Card } from 'react-bootstrap';
-import { useState,type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import type { CommentImage, PlaceComment } from '../types/tripTypes';
-import ImageLightbox from './ImageLightBox'
+import ImageLightbox from './ImageLightBox';
 
 type CommentCardProps = {
   comment: PlaceComment;
@@ -10,10 +10,9 @@ type CommentCardProps = {
 export default function CommentCard({
   comment,
 }: CommentCardProps): ReactElement {
-
   const authorName = comment.author?.username ?? 'Someone';
   const [avatarFailed, setAvatarFailed] = useState(false);
-  const authorAvatar =  comment.author?.avatar ?? null;
+  const authorAvatar = comment.author?.avatar ?? null;
   const text = comment.text;
   const createdAt = comment.created_at;
   const images: CommentImage[] = comment.images ?? [];
@@ -101,7 +100,11 @@ export default function CommentCard({
                   src={img.image_url}
                   alt={`Comment image ${img.id}`}
                   className="w-100 h-100"
-                  style={{ objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+                  style={{
+                    objectFit: 'cover',
+                    display: 'block',
+                    cursor: 'pointer',
+                  }}
                   onClick={() => setLightboxUrl(img.image_url)}
                 />
               </div>
@@ -113,7 +116,11 @@ export default function CommentCard({
         <div className="text-muted small">{dateLabel}</div>
       </Card.Body>
       {/* render Lightbox */}
-      <ImageLightbox show={!!lightboxUrl} url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
-    </Card>  
+      <ImageLightbox
+        show={!!lightboxUrl}
+        url={lightboxUrl}
+        onClose={() => setLightboxUrl(null)}
+      />
+    </Card>
   );
 }
