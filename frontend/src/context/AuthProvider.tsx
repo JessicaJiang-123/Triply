@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const response = await axiosInstance.get('/api/user/profile/');
         if (response.data.is_authenticated) {
           setCurrentUser(response.data);
-          console.log('User fetched:', response.data);
+          // console.log('User fetched:', response.data);
         } else {
           setCurrentUser(null);
         }

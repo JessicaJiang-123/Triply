@@ -11,7 +11,7 @@ const defaultImage =
  * @returns A Promise that resolves to an image URL string
  */
 export async function fetchPlaceImage(placeName: string): Promise<string> {
-  console.log('Fetching image for place:', placeName);
+  // console.log('Fetching image for place:', placeName);
   if (!placeName) return defaultImage;
 
   const accessKey = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;

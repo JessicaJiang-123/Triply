@@ -136,8 +136,8 @@ export default function AddTripPage() {
     const MIN_YEAR = 2024;
     const MAX_YEAR = 2030;
 
-    console.log('Start year:', start.getFullYear());
-    console.log('End year:', end.getFullYear());
+    // console.log('Start year:', start.getFullYear());
+    // console.log('End year:', end.getFullYear());
 
     if (start.getFullYear() < MIN_YEAR || start.getFullYear() > MAX_YEAR) {
       setErrorMsg(
@@ -168,13 +168,13 @@ export default function AddTripPage() {
 
     try {
       const payload = { ...formData };
-      console.log('Submitting trip data:', payload);
+      // console.log('Submitting trip data:', payload);
 
       const endpoint =
         mode === 'ai' ? '/api/plans/generate-ai-plan/' : '/api/plans/trips/';
 
       const response = await axiosInstance.post(endpoint, payload);
-      console.log('Trip created:', response.data);
+      // console.log('Trip created:', response.data);
 
       const newTrip: Trip = response.data;
 

@@ -26,7 +26,7 @@ const TravelPlanPage: React.FC = () => {
       setError(null);
       try {
         const response = await axiosInstance.get('/api/plans/trips/');
-        console.log('Fetched trips:', response.data);
+        // console.log('Fetched trips:', response.data);
         setTrips(response.data);
       } catch (err) {
         console.error('Error fetching trips:', err);
