@@ -166,22 +166,22 @@ export default function AddPlacePage() {
         day: day_id,
         ...(imageUrl && { image_url: imageUrl }),
       };
-      console.log('Submitting place:', payload);
+      // console.log('Submitting place:', payload);
 
       if (isEditMode) {
         // Update existing place
-        const response = await axiosInstance.post(
+        await axiosInstance.post(
           `/api/plans/trips/${trip_id}/days/${day_id}/places/${place_id}/`,
           payload
         );
-        console.log('Place updated: ', response.data);
+        // console.log('Place updated: ', response.data);
       } else {
         // Create new place
-        const response = await axiosInstance.post(
+        await axiosInstance.post(
           `/api/plans/trips/${trip_id}/days/${day_id}/places/`,
           payload
         );
-        console.log('Place added: ', response.data);
+        // console.log('Place added: ', response.data);
       }
 
       // Navigate back to the trip's current date view

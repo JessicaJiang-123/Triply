@@ -25,7 +25,7 @@ const MapComponent: React.FC<MapProps> = ({ places, center, routes }) => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { longitude, latitude } = pos.coords;
-          console.log('User coordinates:', longitude, latitude);
+          // console.log('User coordinates:', longitude, latitude);
           resolve([longitude, latitude]);
         },
         (err) => {

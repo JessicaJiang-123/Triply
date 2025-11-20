@@ -34,7 +34,7 @@ export default function PlanDetailPage(): ReactElement {
       if (!trip_id) return;
       try {
         const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
-        console.log('Fetched trip', res.data);
+        // console.log('Fetched trip', res.data);
         setTrip(res.data);
       } catch (err) {
         console.error('Failed to fetch trip', err);
@@ -56,7 +56,7 @@ export default function PlanDetailPage(): ReactElement {
         const res = await axiosInstance.get(
           `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
-        console.log('Fetched places for day', res.data);
+        // console.log('Fetched places for day', res.data);
         const fetchedPlaces: Place[] = res.data.places || [];
         const fetchedRoutes: RouteSegment[] = res.data.routes || [];
         setPlaces(fetchedPlaces);
