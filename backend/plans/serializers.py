@@ -111,7 +111,6 @@ class TripSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "created_at",
-            "share_uuid",
             "days",
             "image_url",
             "preferences",

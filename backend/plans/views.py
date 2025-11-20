@@ -46,19 +46,6 @@ class IsOwnerOrSharedReadOnly(permissions.BasePermission):
         
         return False
 
-# Use for PlanShareAPIView
-class IsOwnerOrInSharedList(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        # allow owner full access
-        if obj.user == request.user:
-            return True
-        
-        # allow users in shared_users list
-        return obj.shared_users.filter(pk=request.user.pk).exists()
-    
 
 class TripViewSet(viewsets.ModelViewSet):
     """
@@ -129,7 +116,6 @@ class TripViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 'message': f'Trip successfully shared with {email}.',
-                'share_uuid': trip.share_uuid
             },
             status=status.HTTP_200_OK
         )
@@ -139,13 +125,6 @@ class PlanDetailAPIView(generics.RetrieveAPIView):
     queryset = Trip.objects.all()
     serializer_class = TripSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrSharedReadOnly]
-
-
-class PlanShareAPIView(generics.RetrieveAPIView):
-    lookup_field = "share_uuid"
-    queryset = Trip.objects.all()
-    serializer_class = TripSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrInSharedList]
 
 
 class DayForTripAPIView(APIView):
