@@ -90,7 +90,7 @@ export default function CommentCard({
                 key={img.id}
                 style={{
                   flex: '0 0 auto',
-                  width: 150, 
+                  width: 150,
                   height: 100,
                   borderRadius: 12,
                   overflow: 'hidden',

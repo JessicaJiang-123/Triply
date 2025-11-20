@@ -36,8 +36,8 @@ export async function fetchPlaceImage(placeName: string): Promise<string> {
       return imageUrl;
     }
     return defaultImage;
-  } catch (error) {
-    console.error('Failed to fetch place image:', error);
+  } catch {
+    // console.error('Failed to fetch place image:', error);
     return defaultImage;
   }
 }

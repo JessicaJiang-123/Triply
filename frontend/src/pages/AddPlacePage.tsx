@@ -48,8 +48,8 @@ export default function AddPlacePage() {
           `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
         setDayDate(response.data.date);
-      } catch (error) {
-        console.error('Error fetching day date:', error);
+      } catch {
+        // console.error('Error fetching day date:', error);
       }
     };
 
@@ -73,8 +73,8 @@ export default function AddPlacePage() {
           notes: place.notes || '',
           mapbox_id: place.mapbox_id || '',
         });
-      } catch (error) {
-        console.error('Failed to fetch place details:', error);
+      } catch {
+        // console.error('Failed to fetch place details:', error);
         setErrorMsg('Failed to load existing place details.');
       }
     };
@@ -187,7 +187,7 @@ export default function AddPlacePage() {
       // Navigate back to the trip's current date view
       navigate(`/trips/${trip_id}/days/${day_id}`);
     } catch (error) {
-      console.error('Failed to add place:', error);
+      // console.error('Failed to add place:', error);
       if (axios.isAxiosError(error) && error.response) {
         setErrorMsg(
           error.response.data.detail ||

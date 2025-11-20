@@ -13,6 +13,8 @@ The project specification and sprint planning are documented in: [f25_team_1 Kan
 - django-cors-headers: Enables secure cross-origin requests between frontend and backend
 - djangorestframework: Provides tools for building RESTful APIs, including serializers, authentication, permissions, and viewsets
 - social-auth-app-django: Handles Google OAuth2 authentication and user login integration
+- Pillow: Required by Django's ImageField
+- google-genai: Google Gemini API client used by the AI trip planner to generate travel plans
 
 ### Frontend
 

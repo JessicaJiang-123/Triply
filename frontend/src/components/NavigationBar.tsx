@@ -25,8 +25,8 @@ export default function NavigationBar({ title }: NavigationBarProps) {
       await axiosInstance.post('/api/user/logout/');
       setCurrentUser(null);
       navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch {
+      // console.error('Logout failed:', error);
     }
   };
 

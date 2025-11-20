@@ -185,11 +185,11 @@ export default function AddTripPage() {
       if (firstDayId) {
         navigate(`/trips/${newTrip.id}/days/${firstDayId}`);
       } else {
-        console.error('New trip data is missing days, navigating to list.');
+        // console.error('New trip data is missing days, navigating to list.');
         navigate('/trips');
       }
     } catch (error) {
-      console.error('Failed to create trip:', error);
+      // console.error('Failed to create trip:', error);
       if (axios.isAxiosError(error) && error.response) {
         setErrorMsg(
           error.response.data.detail ||

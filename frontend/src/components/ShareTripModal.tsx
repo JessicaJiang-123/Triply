@@ -43,7 +43,7 @@ export default function ShareTripModal({
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.error('Failed to share trip:', err);
+      // console.error('Failed to share trip:', err);
       setError(
         err.response?.data?.detail || 'Failed to share trip. Please try again.'
       );
