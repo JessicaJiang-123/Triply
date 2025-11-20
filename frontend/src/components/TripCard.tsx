@@ -66,7 +66,10 @@ const TripCard: React.FC<TripCardProps> = ({
   const dateRange = `${start_date} to ${end_date}`;
 
   return (
-    <Card className="shadow-sm h-100 overflow-hidden" style={{ cursor: 'pointer' }}>
+    <Card
+      className="shadow-sm h-100 overflow-hidden"
+      style={{ cursor: 'pointer' }}
+    >
       <Row className="h-100">
         <Col xs={6} className="h-100" style={{ minHeight: '200px' }}>
           <Card.Img

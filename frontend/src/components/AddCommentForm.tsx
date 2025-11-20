@@ -37,7 +37,7 @@ export default function AddCommentForm({
       setText('');
       setImageUrls([]);
       onPosted?.();
-    } catch (err: unknown) {
+    } catch {
       // console.error('Failed to post comment', err);
       setError('Failed to post comment');
     } finally {
@@ -89,7 +89,11 @@ export default function AddCommentForm({
       const urls = imgs
         .map((i: unknown) => {
           if (typeof i === 'string') return i;
-          if (i && typeof i === 'object' && 'image_url' in (i as Record<string, unknown>)) {
+          if (
+            i &&
+            typeof i === 'object' &&
+            'image_url' in (i as Record<string, unknown>)
+          ) {
             const obj = i as Record<string, unknown>;
             const v = obj['image_url'];
             return typeof v === 'string' ? v : undefined;
@@ -98,7 +102,7 @@ export default function AddCommentForm({
         })
         .filter(Boolean) as string[];
       setImageUrls((s) => [...s, ...urls].slice(0, 3));
-    } catch (err) {
+    } catch {
       // console.error('Upload failed', err);
       setUploadError('Upload failed');
     } finally {
@@ -122,18 +126,18 @@ export default function AddCommentForm({
             accept="image/*"
             style={{ display: 'none' }}
             multiple
-              onClick={(e) => {
-                // prevent opening file picker when already at limit and show an error
-                if (imageUrls.length >= 3) {
-                  e.preventDefault();
-                  setUploadError('You can only upload up to 3 images');
-                  return;
-                }
-                // clear previous upload errors when user intentionally opens picker
-                setUploadError(null);
-              }}
-              onChange={(e) => handleFilesSelected(e.target.files)}
-              disabled={uploading || loading}
+            onClick={(e) => {
+              // prevent opening file picker when already at limit and show an error
+              if (imageUrls.length >= 3) {
+                e.preventDefault();
+                setUploadError('You can only upload up to 3 images');
+                return;
+              }
+              // clear previous upload errors when user intentionally opens picker
+              setUploadError(null);
+            }}
+            onChange={(e) => handleFilesSelected(e.target.files)}
+            disabled={uploading || loading}
           />
         </label>
         <Button
@@ -173,7 +177,9 @@ export default function AddCommentForm({
                 className="btn-close"
                 aria-label={`Remove image ${idx + 1}`}
                 style={{ position: 'absolute', top: 4, right: 4 }}
-                onClick={() => setImageUrls((s) => s.filter((_, i) => i !== idx))}
+                onClick={() =>
+                  setImageUrls((s) => s.filter((_, i) => i !== idx))
+                }
               />
             </div>
           ))}

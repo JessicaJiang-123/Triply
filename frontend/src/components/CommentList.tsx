@@ -33,7 +33,7 @@ export default function CommentList({
         );
         if (cancelled) return;
         setComments(res.data || []);
-      } catch (err: unknown) {
+      } catch {
         if (cancelled) return;
         // console.error('Failed to load comments', err);
         setError('Failed to load comments');

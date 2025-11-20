@@ -48,7 +48,7 @@ export default function AddPlacePage() {
           `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
         setDayDate(response.data.date);
-      } catch (error) {
+      } catch {
         // console.error('Error fetching day date:', error);
       }
     };
@@ -73,7 +73,7 @@ export default function AddPlacePage() {
           notes: place.notes || '',
           mapbox_id: place.mapbox_id || '',
         });
-      } catch (error) {
+      } catch {
         // console.error('Failed to fetch place details:', error);
         setErrorMsg('Failed to load existing place details.');
       }

@@ -51,7 +51,7 @@ export default function PlaceImagePreview({
           (v): v is CommentImage => !!v && v.image_url !== ''
         );
         setImages(imgs);
-      } catch (err) {
+      } catch {
         // console.error('Failed to fetch comment images', err);
         if (!mounted) return;
         setImages([]);

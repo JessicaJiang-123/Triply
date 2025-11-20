@@ -38,7 +38,7 @@ export async function getRouteBetweenPoints(
     const distance: number = route.distance; // in meters
 
     return { id, coordinates, duration, distance };
-  } catch (error) {
+  } catch {
     // console.error('Failed to fetch route info:', error);
     return null;
   }
