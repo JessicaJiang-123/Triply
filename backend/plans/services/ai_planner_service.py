@@ -203,7 +203,7 @@ def create_trip_plan_from_ai(user, trip_data):
     if not recommendations:
         trip.delete()
         print("Failed to generate trip recommendations from AI.")
-        return None, "Failed to generate trip recommendations from AI."
+        return None, "AI planner is busy or not available now, please try again later."
     
     print("AI Recommendations:", json.dumps(recommendations, indent=2))
     

@@ -252,7 +252,7 @@ class AIGeneratePlanView(APIView):
 
         if not trip:
             return Response(
-                {"detail": error_message or "AI planner is busy or not available now, please try again later."},
+                {"detail": error_message},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
                 
