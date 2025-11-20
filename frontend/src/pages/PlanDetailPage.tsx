@@ -141,9 +141,8 @@ export default function PlanDetailPage(): ReactElement {
 
   const isOwner = currentUser ? currentUser.id === trip?.owner.id : false;
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || !trip) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
-  if (!trip) return <div>No trip found.</div>;
 
   return (
     <>
