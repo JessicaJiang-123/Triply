@@ -94,6 +94,11 @@ class TripViewSet(viewsets.ModelViewSet):
             )
 
         email = request.data.get('email')
+        if not isinstance(email, str):
+            return Response(
+                {"detail": "Email must be a string."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if not email:
             return Response(
                 {"detail": "Email is required."},

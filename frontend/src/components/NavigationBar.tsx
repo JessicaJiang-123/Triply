@@ -36,7 +36,7 @@ export default function NavigationBar({ title }: NavigationBarProps) {
       expand="md"
       sticky="top"
       className="border-bottom shadow-sm px-3 w-100"
-      style={{ height: '64px' }} // Fixed height for consistency
+      style={{ minHeight: '64px' }} // Fixed height for consistency
     >
       <Container fluid>
         {/* Left: Brand + Optional Title */}
@@ -64,26 +64,29 @@ export default function NavigationBar({ title }: NavigationBarProps) {
           )}
         </div>
 
-        {/* Right: User info & Logout */}
-        {currentUser && (
-          <Nav className="ms-auto align-items-center">
-            <span className="me-2 text-dark">
-              Welcome, <strong>{currentUser.username}</strong>
-            </span>
-            <Image
-              src={currentUser.picture}
-              alt="User avatar"
-              roundedCircle
-              width={36}
-              height={36}
-              className="me-3 border border-primary"
-              referrerPolicy="no-referrer"
-            />
-            <Button variant="outline-danger" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
-          </Nav>
-        )}
+        <Navbar.Toggle aria-controls="user-nav-content" />
+        <Navbar.Collapse id="user-nav-content" className="justify-content-end">
+          {/* Right: User info & Logout */}
+          {currentUser && (
+            <Nav className="ms-auto align-items-center">
+              <span className="me-2 text-dark">
+                Welcome, <strong>{currentUser.username}</strong>
+              </span>
+              <Image
+                src={currentUser.picture}
+                alt="User avatar"
+                roundedCircle
+                width={36}
+                height={36}
+                className="me-3 border border-primary"
+                referrerPolicy="no-referrer"
+              />
+              <Button variant="outline-danger" size="sm" onClick={handleLogout}>
+                Logout
+              </Button>
+            </Nav>
+          )}
+        </Navbar.Collapse>
       </Container>
     </Navbar>
   );

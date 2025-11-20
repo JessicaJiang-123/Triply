@@ -93,6 +93,11 @@ class TripSerializer(serializers.ModelSerializer):
     owner = SimpleUserSerializer(source='user', read_only=True)
     firstDayId = serializers.SerializerMethodField()
     shared_users = SimpleUserSerializer(many=True, read_only=True)
+    preferences = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
 
     class Meta:
         model = Trip

@@ -228,6 +228,7 @@ export default function AddTripPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  maxLength={100}
                 />
               </Form.Group>
 
