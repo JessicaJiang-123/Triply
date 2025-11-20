@@ -38,7 +38,7 @@ export default function AddCommentForm({
       setImageUrls([]);
       onPosted?.();
     } catch (err: unknown) {
-      console.error('Failed to post comment', err);
+      // console.error('Failed to post comment', err);
       setError('Failed to post comment');
     } finally {
       setLoading(false);
@@ -99,7 +99,7 @@ export default function AddCommentForm({
         .filter(Boolean) as string[];
       setImageUrls((s) => [...s, ...urls].slice(0, 3));
     } catch (err) {
-      console.error('Upload failed', err);
+      // console.error('Upload failed', err);
       setUploadError('Upload failed');
     } finally {
       setUploading(false);

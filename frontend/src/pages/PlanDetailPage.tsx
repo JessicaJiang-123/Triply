@@ -37,7 +37,7 @@ export default function PlanDetailPage(): ReactElement {
         // console.log('Fetched trip', res.data);
         setTrip(res.data);
       } catch (err) {
-        console.error('Failed to fetch trip', err);
+        // console.error('Failed to fetch trip', err);
         if (axios.isAxiosError(err) && err.response) {
           setError(err.response.data.detail || 'Fetch trip details failed');
         } else {
@@ -65,7 +65,7 @@ export default function PlanDetailPage(): ReactElement {
         setSelectedRouteId(null);
         setSelectedMapboxId(null);
       } catch (err) {
-        console.error('Failed to fetch day places', err);
+        // console.error('Failed to fetch day places', err);
         if (axios.isAxiosError(err) && err.response) {
           setError(err.response.data.detail || 'Fetch day places failed');
         } else {
@@ -111,7 +111,7 @@ export default function PlanDetailPage(): ReactElement {
         setSelectedMapboxId(null);
       }
     } catch (err) {
-      console.error('Delete place failed', err);
+      // console.error('Delete place failed', err);
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.detail || 'Delete place failed');
       } else {

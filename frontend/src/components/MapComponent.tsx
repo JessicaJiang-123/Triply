@@ -64,10 +64,10 @@ const MapComponent: React.FC<MapProps> = ({ places, center, routes }) => {
         try {
           initialCenter = await getUserCoordinates();
         } catch (error) {
-          console.warn(
-            'Failed to get user location, fallback to [0, 0]:',
-            error
-          );
+          // console.warn(
+          //   'Failed to get user location, fallback to [0, 0]:',
+          //   error
+          // );
           initialCenter = [0, 0];
         }
       }

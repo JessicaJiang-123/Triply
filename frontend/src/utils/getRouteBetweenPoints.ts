@@ -28,7 +28,7 @@ export async function getRouteBetweenPoints(
     const response = await axios.get(url, { params });
 
     if (!response.data?.routes?.length) {
-      console.warn('No routes found between points:', origin, destination);
+      // console.warn('No routes found between points:', origin, destination);
       return null;
     }
 
@@ -39,7 +39,7 @@ export async function getRouteBetweenPoints(
 
     return { id, coordinates, duration, distance };
   } catch (error) {
-    console.error('Failed to fetch route info:', error);
+    // console.error('Failed to fetch route info:', error);
     return null;
   }
 }

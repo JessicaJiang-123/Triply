@@ -26,7 +26,7 @@ export default function NavigationBar({ title }: NavigationBarProps) {
       setCurrentUser(null);
       navigate('/login');
     } catch (error) {
-      console.error('Logout failed:', error);
+      // console.error('Logout failed:', error);
     }
   };
 

@@ -35,7 +35,7 @@ export default function CommentList({
         setComments(res.data || []);
       } catch (err: unknown) {
         if (cancelled) return;
-        console.error('Failed to load comments', err);
+        // console.error('Failed to load comments', err);
         setError('Failed to load comments');
         setComments([]);
       } finally {

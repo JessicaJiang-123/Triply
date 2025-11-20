@@ -29,7 +29,7 @@ const TravelPlanPage: React.FC = () => {
         // console.log('Fetched trips:', response.data);
         setTrips(response.data);
       } catch (err) {
-        console.error('Error fetching trips:', err);
+        // console.error('Error fetching trips:', err);
         setError('Failed to load your trips. Are you logged in?');
       } finally {
         setLoading(false);
@@ -49,7 +49,7 @@ const TravelPlanPage: React.FC = () => {
         await axiosInstance.delete(`/api/plans/trips/${id}/`);
         setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== id));
       } catch (err) {
-        console.error('Failed to delete trip:', err);
+        // console.error('Failed to delete trip:', err);
         setError('Failed to delete the trip. Please try again.');
       }
     }

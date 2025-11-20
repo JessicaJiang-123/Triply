@@ -52,7 +52,7 @@ export default function PlaceImagePreview({
         );
         setImages(imgs);
       } catch (err) {
-        console.error('Failed to fetch comment images', err);
+        // console.error('Failed to fetch comment images', err);
         if (!mounted) return;
         setImages([]);
       } finally {
