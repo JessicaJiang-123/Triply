@@ -6,10 +6,6 @@ router = DefaultRouter()
 router.register(r'trips', views.TripViewSet, basename='trip')
 
 urlpatterns = [
-     # Shareable plan view
-     path("share/<uuid:share_uuid>/",
-          views.PlanShareAPIView.as_view(), name="plan-share"),
-
      # Get a specific day for a trip
      path("trips/<int:trip_id>/days/<int:day_id>/",
           views.DayForTripAPIView.as_view(), name="day-detail"),

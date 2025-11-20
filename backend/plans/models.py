@@ -13,7 +13,6 @@ class Trip(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
-    share_uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     image_url = models.URLField(max_length=1024, blank=True, null=True)
     preferences = models.JSONField(default=list, blank=True) # List of user travel preferences
     shared_users = models.ManyToManyField(User, related_name='shared_trips', blank=True)
