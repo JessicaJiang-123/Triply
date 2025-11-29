@@ -155,7 +155,6 @@ export default function AddPlacePage() {
 
     // Validate place field
     if (isPlaceInvalid) {
-      
       return;
     }
 
