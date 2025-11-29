@@ -32,7 +32,7 @@ export default function AddPlacePage() {
     start_time: '',
     end_time: '',
     notes: '',
-    mapbox_id: '',
+    mapbox_id: null,
   });
 
   const [changeCover, setChangeCover] = useState(false);
@@ -84,7 +84,7 @@ export default function AddPlacePage() {
           start_time: place.start_time || '',
           end_time: place.end_time || '',
           notes: place.notes || '',
-          mapbox_id: place.mapbox_id || '',
+          mapbox_id: place.mapbox_id || null,
         });
       } catch (err) {
         // console.error('Failed to fetch place details:', error);
@@ -117,7 +117,7 @@ export default function AddPlacePage() {
 
     const name = feature.properties?.name || '';
     const address = feature.properties?.full_address || '';
-    const mapbox_id = feature.properties?.mapbox_id || '';
+    const mapbox_id = feature.properties?.mapbox_id || null;
 
     const city = feature.properties?.context?.place?.name || '';
     if (
@@ -146,26 +146,20 @@ export default function AddPlacePage() {
       name: '',
       address: '',
       mapbox_supported: false,
-      mapbox_id: '',
+      mapbox_id: null,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate place field
     if (isPlaceInvalid) {
       return;
     }
 
-    if (!formData.name.trim()) {
+    // Validate place name and address fields
+    if (!formData.name.trim() || !formData.address.trim()) {
       setIsPlaceInvalid(true);
-      return;
-    }
-
-    // Validate address field and mapbox_id field
-    if (!formData.address.trim() || !formData.mapbox_id.trim()) {
-      setErrorMsg('Please select a valid place with an address.');
       return;
     }
 
