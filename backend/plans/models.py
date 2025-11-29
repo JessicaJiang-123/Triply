@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 
 class UnsplashImage(models.Model):
-    unsplash_url = models.URLField(unique=True)
+    unsplash_url = models.URLField(max_length=2048, unique=True)
     local_image = models.ImageField(upload_to="unsplash/")
 
     def __str__(self):
@@ -61,7 +61,7 @@ class Place(models.Model):
     day = models.ForeignKey(
         Day, on_delete=models.CASCADE, related_name='places')
     # Mapbox feature identifier
-    mapbox_id = models.CharField(max_length=255)
+    mapbox_id = models.CharField(max_length=255, blank=True, null=True)
     # Whether this place is fully supported / recognized by Mapbox
     mapbox_supported = models.BooleanField(default=False)
     # Bind to the canonical SharedPlace

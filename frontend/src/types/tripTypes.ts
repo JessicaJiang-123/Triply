@@ -29,7 +29,7 @@ export type Place = {
   image_url?: string;
   unsplash_image?: UnsplashImage;
   address?: string;
-  mapbox_id: string;
+  mapbox_id?: string;
   mapbox_supported: boolean;
 };
 

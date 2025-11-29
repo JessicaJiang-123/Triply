@@ -6,7 +6,7 @@ type PlaceCardProps = {
   name: string;
   address?: string;
   id?: number;
-  mapbox_id: string;
+  mapbox_id?: string;
   mapbox_supported: boolean;
   notes?: string;
   start_time?: string;
