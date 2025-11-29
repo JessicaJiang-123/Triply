@@ -164,6 +164,7 @@ export default function AddPlacePage() {
         ...formData,
         trip: trip_id,
         day: day_id,
+        mapbox_supported: true,
         ...(imageUrl && { image_url: imageUrl }),
       };
       // console.log('Submitting place:', payload);
