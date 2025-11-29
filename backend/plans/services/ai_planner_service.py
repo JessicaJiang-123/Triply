@@ -94,23 +94,26 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     5. Times must be chronological in the day's schedule (each place must start at or after the previous place ends).
     6. EVERY place must have a SPECIFIC and REAL name (e.g., "Louvre Museum", NOT "Downtown Area" or "Beach District").
     7. PRIORITIZE FAMOUS, POPULAR, AND WIDELY KNOWN PLACES that are easy to find on real map services such as Mapbox.
-       - Avoid obscure, niche, or difficult-to-query locations.
-       - Use landmarks, major attractions, well-known museums, well-reviewed restaurants, etc.
-    8. Do NOT include descriptions inside the "name" field.
-    9. Do NOT invent vague or fictional venues — use well-known or plausible real places.
-    10. The "notes" field must be a short description with a MAXIMUM of 200 characters.
+        - Avoid obscure, niche, or difficult-to-query locations.
+        - Use landmarks, major attractions, well-known museums, well-reviewed restaurants, etc.
+    8. The "address" must be a SPECIFIC, PRECISE, REAL address. 
+        - Do NOT give ranges or general zones (e.g., "5th Avenue Shops", "Central Park Area").
+        - Provide full detailed addresses like "123 Main St, City, State, Country".
+    9. Do NOT include descriptions inside the "name" field.
+    10. Do NOT invent vague or fictional venues — use well-known or plausible real places.
+    11. The "notes" field must be a short description with a MAXIMUM of 200 characters.
 
     ADDITIONAL PLANNING RULES:
-    11. Consider **geographic distance** between consecutive places.
+    12. Consider **geographic distance** between consecutive places.
         - Prefer routes that minimize travel time.
         - Avoid jumping back and forth across the city unnecessarily.
         - Group nearby attractions together on the same day.
-    12. Include **meal-friendly restaurant stops** when appropriate.
+    13. Include **meal-friendly restaurant stops** when appropriate.
         - Add lunch stop around **11:30-13:30**.
         - Add dinner stop around **17:30-19:30**.
         - Restaurants must be well-known, popular, and easy to find on Mapbox.
         - Do NOT invent fictional restaurants.
-    13. Restaurants must also follow all time rules (valid start/end, chronological ordering).
+    14. Restaurants must also follow all time rules (valid start/end, chronological ordering).
 
     Respond with ONLY a valid JSON array in the following format.
     Do not include any other text or markdown formatting (like ```json).
