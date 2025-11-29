@@ -1,6 +1,6 @@
 from datetime import timedelta
 from ..models import Trip, Day
-from ..utils.image_utils import fetch_image_url
+from ..utils.image_utils import fetch_image_url, get_or_download_unsplash_image
 from ..utils.map_utils import get_coordinate_from_address
 
 def create_trip_with_days(user, validated_data):
@@ -14,7 +14,8 @@ def create_trip_with_days(user, validated_data):
     main_city_name = destination_city.split(",")[0].strip() if destination_city else ""
 
     # Fetch city image
-    image_url = fetch_image_url(main_city_name)
+    unsplash_url = fetch_image_url(main_city_name)
+    unsplash_image_obj = get_or_download_unsplash_image(unsplash_url)
 
     # Fetch coordinates
     longitude, latitude = get_coordinate_from_address(destination_city)
@@ -26,7 +27,8 @@ def create_trip_with_days(user, validated_data):
         destination_city=destination_city,
         start_date=validated_data["start_date"],
         end_date=validated_data["end_date"],
-        image_url=image_url,
+        image_url=unsplash_url,
+        unsplash_image=unsplash_image_obj,
         latitude=latitude,
         longitude=longitude,
     )
