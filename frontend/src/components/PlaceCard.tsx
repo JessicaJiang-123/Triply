@@ -119,7 +119,7 @@ export default function PlaceCard({
                     style={{
                       fontSize: 16,
                       cursor: 'pointer',
-                      opacity: 0.9,
+                      opacity: 0.8,
                     }}
                     title="This place is not supported or verified by the map system. Coordinates or routes may be inaccurate."
                   ></i>
