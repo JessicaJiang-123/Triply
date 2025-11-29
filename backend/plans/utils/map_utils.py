@@ -8,16 +8,19 @@ config_path = os.path.join(os.path.dirname(__file__), '../../', 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path)
 
-def search_place(place_name, city, country):
+def search_place(place_name=None, coordinates=None, city=None, country=None):
     """
-    Query the Mapbox Search Box API to validate a place name and
-    return structured results including:
-        - mapbox_id
-        - name
-        - full_address
-    Or None if not found/invalid.
+    Search for a place using Mapbox Searchbox API.
+    
+    Modes:
+    - Forward search: provide place_name, city, country
+    - Reverse search: provide coordinates=(longitude, latitude)
+
+    Returns structured dict:
+        { mapbox_id, name, full_address }
+    or None if no valid result.
     """
-    if not place_name or not city or not country:
+    if (not place_name and not coordinates) or not city or not country:
         return None
     
     mapbox_api_key = config.get('Mapbox', 'API_KEY', fallback=None)
@@ -25,17 +28,29 @@ def search_place(place_name, city, country):
         print("Mapbox API key not found in config.ini")
         return None
     
-    params = {
-        "q": place_name,
-        "access_token": mapbox_api_key,
-        "types": "poi,address", # ensure POIs + address results
-        "limit": 10,
-        "language": "en"
-    }
+    if place_name:
+        params = {
+            "q": place_name,
+            "access_token": mapbox_api_key,
+            "types": "poi,address", # ensure POIs + address results
+            "limit": 10,
+            "language": "en"
+        }
+    if coordinates:
+        params = {
+            "longitude": coordinates[0],
+            "latitude": coordinates[1],
+            "access_token": mapbox_api_key,
+            "types": "poi,address", # ensure POIs + address results
+            "limit": 10,
+            "language": "en"
+        }
 
-    url = "https://api.mapbox.com/search/searchbox/v1/forward"
+    url_forward = "https://api.mapbox.com/search/searchbox/v1/forward"
+    url_reverse = "https://api.mapbox.com/search/searchbox/v1/reverse"
 
     try:
+        url = url_forward if place_name else url_reverse
         response = requests.get(url, params=params, timeout=6)
         response.raise_for_status()
 

@@ -5,7 +5,7 @@ from django.db.models import F
 from rest_framework.exceptions import PermissionDenied
 from ..models import Day, Place, Trip, RouteSegment, SharedPlace
 from ..serializers import PlaceSerializer
-from ..utils.image_utils import fetch_image_url
+from ..utils.image_utils import fetch_image_url, get_or_download_unsplash_image
 from ..utils.map_utils import get_coordinate_from_address, fetch_route_between_points
 
 def get_trip_and_day_for_user(trip_id, day_id, user):
@@ -58,8 +58,9 @@ def create_place_for_day(data, day_obj):
         assign_order = insertion_order
 
     # fetch image
-    image_url = fetch_image_url(data.get("name", ""))
-    data["image_url"] = image_url
+    unsplash_url = fetch_image_url(data.get("name", ""))
+    unsplash_image_obj = get_or_download_unsplash_image(unsplash_url)
+    data["image_url"] = unsplash_url
 
     # Convert address to coordinates
     longitude, latitude = get_coordinate_from_address(data.get("address", ""))
@@ -69,7 +70,8 @@ def create_place_for_day(data, day_obj):
     serializer = PlaceSerializer(data=data)
     serializer.is_valid(raise_exception=True)
     
-    place = serializer.save(day=day_obj, order=assign_order)
+    place = serializer.save(day=day_obj, order=assign_order, 
+                            unsplash_image=unsplash_image_obj)
 
     prev_place = (
         Place.objects.filter(day=day_obj, order=assign_order - 1).first()
@@ -148,7 +150,10 @@ def update_place_for_day(data, day_obj, place_id):
 
     # if user requested new image or place name changed, fetch new image
     if image_requested or name_changed:
-        place.image_url = fetch_image_url(data.get("name", ""))
+        unsplash_url = fetch_image_url(data.get("name", ""))
+        unsplash_image_obj = get_or_download_unsplash_image(unsplash_url)
+        place.unsplash_image = unsplash_image_obj
+        place.image_url = unsplash_url
 
     # if place name changed, update the coordinates
     if name_changed or address_changed:
@@ -164,6 +169,7 @@ def update_place_for_day(data, day_obj, place_id):
         "end_time",
         "notes",
         "category",
+        "mapbox_supported",
     ]:
         if field in data:
             setattr(place, field, data[field])

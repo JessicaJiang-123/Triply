@@ -7,7 +7,7 @@ interface TripCardProps {
   location: string;
   start_date: string;
   end_date: string;
-  image_url: string;
+  image_url?: string;
   onDelete: (id: number) => void;
   onShare: (id: number) => void;
   isOwner: boolean;

@@ -6,7 +6,8 @@ type PlaceCardProps = {
   name: string;
   address?: string;
   id?: number;
-  mapbox_id?: string;
+  mapbox_id: string;
+  mapbox_supported: boolean;
   notes?: string;
   start_time?: string;
   end_time?: string;
@@ -33,6 +34,7 @@ export default function PlaceCard({
   day_id,
   isOwner,
   mapbox_id,
+  mapbox_supported,
   onPreviewComments,
 }: PlaceCardProps): ReactElement {
   const navigate = useNavigate();
@@ -85,27 +87,44 @@ export default function PlaceCard({
         <Col xs={8}>
           <Card.Body className="d-flex flex-column h-100">
             <div className="d-flex justify-content-between align-items-start mb-2">
-              <Card.Title
-                className="mb-0 fw-bold"
-                role={onPreviewComments ? 'button' : undefined}
-                tabIndex={onPreviewComments ? 0 : undefined}
-                onClick={() =>
-                  onPreviewComments && mapbox_id && onPreviewComments(mapbox_id)
-                }
-                onKeyDown={(e: React.KeyboardEvent) => {
-                  if (!onPreviewComments || !mapbox_id) return;
-                  if (e.key === 'Enter' || e.key === ' ')
-                    onPreviewComments(mapbox_id);
-                }}
-                style={{
-                  cursor: onPreviewComments ? 'pointer' : undefined,
-                  fontSize: 18,
-                  lineHeight: 1.3,
-                }}
-              >
-                {order ? `${order}. ` : ''}
-                {name}
-              </Card.Title>
+              <div className="d-flex align-items-center">
+                <Card.Title
+                  className="mb-0 fw-bold"
+                  role={onPreviewComments ? 'button' : undefined}
+                  tabIndex={onPreviewComments ? 0 : undefined}
+                  onClick={() =>
+                    onPreviewComments &&
+                    mapbox_id &&
+                    onPreviewComments(mapbox_id)
+                  }
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (!onPreviewComments || !mapbox_id) return;
+                    if (e.key === 'Enter' || e.key === ' ')
+                      onPreviewComments(mapbox_id);
+                  }}
+                  style={{
+                    cursor: onPreviewComments ? 'pointer' : undefined,
+                    fontSize: 18,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {order ? `${order}. ` : ''}
+                  {name}
+                </Card.Title>
+
+                {/* Warning icon if mapbox_supported = false */}
+                {!mapbox_supported && (
+                  <i
+                    className="bi bi-exclamation-triangle-fill text-warning ms-2"
+                    style={{
+                      fontSize: 16,
+                      cursor: 'pointer',
+                      opacity: 0.8,
+                    }}
+                    title="This place is not supported or verified by the map system. Coordinates or routes may be inaccurate."
+                  ></i>
+                )}
+              </div>
             </div>
 
             {/* Address */}

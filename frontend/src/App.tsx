@@ -6,6 +6,7 @@ import TravelPlanPage from './pages/TravelPlanPage';
 import AddTripPage from './pages/AddTripPage';
 import AddPlacePage from './pages/AddPlacePage';
 import PlanDetailPage from './pages/PlanDetailPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   const { currentUser } = useContext(AuthContext);
@@ -62,6 +63,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        {/* Catch all unmatched routes and render 404 NotFoundPage */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

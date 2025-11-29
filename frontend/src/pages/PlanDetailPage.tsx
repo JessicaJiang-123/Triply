@@ -20,7 +20,8 @@ export default function PlanDetailPage(): ReactElement {
   const [routes, setRoutes] = useState<RouteSegment[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [selectedMapboxId, setSelectedMapboxId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingTrip, setLoadingTrip] = useState(true);
+  const [loadingPlaces, setLoadingPlaces] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dateRowRef = useRef<HTMLDivElement | null>(null);
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
@@ -39,10 +40,15 @@ export default function PlanDetailPage(): ReactElement {
       } catch (err) {
         // console.error('Failed to fetch trip', err);
         if (axios.isAxiosError(err) && err.response) {
-          setError(err.response.data.detail || 'Fetch trip details failed');
+          const status = err.response.status;
+          const detail =
+            err.response.data?.detail || 'Fetch trip details failed';
+          setError(`${detail} (${status})`);
         } else {
           setError('Fetch trip details failed');
         }
+      } finally {
+        setLoadingTrip(false);
       }
     };
     fetchTrip();
@@ -67,12 +73,14 @@ export default function PlanDetailPage(): ReactElement {
       } catch (err) {
         // console.error('Failed to fetch day places', err);
         if (axios.isAxiosError(err) && err.response) {
-          setError(err.response.data.detail || 'Fetch day places failed');
+          const status = err.response.status;
+          const detail = err.response.data?.detail || 'Fetch day places failed';
+          setError(`${detail} (${status})`);
         } else {
           setError('Fetch day places failed');
         }
       } finally {
-        setLoading(false);
+        setLoadingPlaces(false);
       }
     };
     fetchPlaces();
@@ -141,8 +149,9 @@ export default function PlanDetailPage(): ReactElement {
 
   const isOwner = currentUser ? currentUser.id === trip?.owner.id : false;
 
-  if (loading || !trip) return <div>Loading...</div>;
+  if (loadingTrip || loadingPlaces) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
+  if (!trip) return <div>404 Not Found: Trip does not exist</div>;
 
   return (
     <>
@@ -255,9 +264,10 @@ export default function PlanDetailPage(): ReactElement {
                     notes={p.notes}
                     start_time={p.start_time}
                     end_time={p.end_time}
-                    image_url={p.image_url}
+                    image_url={p.unsplash_image?.local_image_url || p.image_url}
                     id={p.id}
                     mapbox_id={p.mapbox_id}
+                    mapbox_supported={p.mapbox_supported}
                     onPreviewComments={(mbid: string) =>
                       setSelectedMapboxId(mbid)
                     }
