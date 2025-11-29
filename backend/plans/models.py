@@ -61,7 +61,9 @@ class Place(models.Model):
     day = models.ForeignKey(
         Day, on_delete=models.CASCADE, related_name='places')
     # Mapbox feature identifier
-    mapbox_id = models.CharField(max_length=255, blank=True)
+    mapbox_id = models.CharField(max_length=255)
+    # Whether this place is fully supported / recognized by Mapbox
+    mapbox_supported = models.BooleanField(default=False)
     # Bind to the canonical SharedPlace
     shared_place = models.ForeignKey(
         'SharedPlace', on_delete=models.SET_NULL, null=True, blank=True, related_name='user_places')

@@ -49,6 +49,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             "id",
             "day",
             "mapbox_id",
+            "mapbox_supported",
             "name",
             "category",
             "start_time",
