@@ -41,7 +41,8 @@ export default function PlanDetailPage(): ReactElement {
         // console.error('Failed to fetch trip', err);
         if (axios.isAxiosError(err) && err.response) {
           const status = err.response.status;
-          const detail = err.response.data?.detail || 'Fetch trip details failed';
+          const detail =
+            err.response.data?.detail || 'Fetch trip details failed';
           setError(`${detail} (${status})`);
         } else {
           setError('Fetch trip details failed');
