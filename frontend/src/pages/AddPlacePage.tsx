@@ -37,6 +37,7 @@ export default function AddPlacePage() {
 
   const [changeCover, setChangeCover] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [destinationCity, setDestinationCity] = useState<string>('');
   const [isPlaceInvalid, setIsPlaceInvalid] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -45,12 +46,22 @@ export default function AddPlacePage() {
   useEffect(() => {
     const fetchDayDate = async () => {
       try {
+        const res = await axiosInstance.get(`/api/plans/trips/${trip_id}/`);
+        setDestinationCity(res.data.destination_city);
         const response = await axiosInstance.get(
           `/api/plans/trips/${trip_id}/days/${day_id}/`
         );
         setDayDate(response.data.date);
-      } catch {
+      } catch (err) {
         // console.error('Error fetching day date:', error);
+        if (axios.isAxiosError(err) && err.response) {
+          const status = err.response.status;
+          const detail =
+            err.response.data?.detail || 'Fetch trip details failed';
+          setErrorMsg(`${detail} (${status})`);
+        } else {
+          setErrorMsg('Fetch trip details failed');
+        }
       }
     };
 
@@ -75,9 +86,17 @@ export default function AddPlacePage() {
           notes: place.notes || '',
           mapbox_id: place.mapbox_id || '',
         });
-      } catch {
+      } catch (err) {
         // console.error('Failed to fetch place details:', error);
-        setErrorMsg('Failed to load existing place details.');
+        if (axios.isAxiosError(err) && err.response) {
+          const status = err.response.status;
+          const detail =
+            err.response.data?.detail ||
+            'Failed to load existing place details.';
+          setErrorMsg(`${detail} (${status})`);
+        } else {
+          setErrorMsg('Failed to load existing place details.');
+        }
       }
     };
     fetchPlace();
@@ -94,12 +113,23 @@ export default function AddPlacePage() {
   // Handle Mapbox place selection
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMapboxSelect = (event: any) => {
-    setIsPlaceInvalid(false);
     const feature = event.features[0];
 
     const name = feature.properties?.name || '';
     const address = feature.properties?.full_address || '';
     const mapbox_id = feature.properties?.mapbox_id || '';
+
+    const city = feature.properties?.context?.place?.name || '';
+    if (
+      city &&
+      city.toLowerCase() ===
+        destinationCity.trim().split(',')[0].trim().toLowerCase()
+    ) {
+      setIsPlaceInvalid(false);
+      setErrorMsg(null);
+    } else {
+      setIsPlaceInvalid(true);
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -124,6 +154,11 @@ export default function AddPlacePage() {
     e.preventDefault();
 
     // Validate place field
+    if (isPlaceInvalid) {
+      
+      return;
+    }
+
     if (!formData.name.trim()) {
       setIsPlaceInvalid(true);
       return;
@@ -245,7 +280,7 @@ export default function AddPlacePage() {
                   isInvalid={isPlaceInvalid}
                 />
                 <Form.Control.Feedback type="invalid">
-                  Please select a place.
+                  {`Please select a place within the destination city (${destinationCity}).`}
                 </Form.Control.Feedback>
 
                 {formData.address && (
