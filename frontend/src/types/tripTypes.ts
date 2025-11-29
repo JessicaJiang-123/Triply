@@ -11,6 +11,11 @@ export type CurrentUser = SimpleUser & {
   picture?: string;
 };
 
+export type UnsplashImage = {
+  unsplash_url: string;
+  local_image_url?: string;
+};
+
 export type Place = {
   id: number;
   name: string;
@@ -22,6 +27,7 @@ export type Place = {
   latitude?: number;
   longitude?: number;
   image_url?: string;
+  unsplash_image?: UnsplashImage;
   address?: string;
   mapbox_id?: string;
 };
@@ -45,6 +51,7 @@ export type Trip = {
   days: Day[];
   share_uuid: string;
   image_url?: string;
+  unsplash_image?: UnsplashImage;
   firstDayId?: number;
   owner: SimpleUser;
   shared_users: SimpleUser[];
