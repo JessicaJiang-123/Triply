@@ -26,6 +26,7 @@ export default function AddCommentForm({
     if (!text.trim() && imageUrls.length === 0) return;
     setLoading(true);
     setError(null);
+    setUploadError(null);
     try {
       await axiosInstance.post(
         `/api/plans/places/by-mapbox/${encodeURIComponent(mapboxId)}/comments/`,
