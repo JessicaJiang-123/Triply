@@ -149,7 +149,9 @@ const TravelPlanPage: React.FC = () => {
                       location={trip.destination_city}
                       start_date={trip.start_date}
                       end_date={trip.end_date}
-                      image_url={trip.image_url || '/login_bg.jpg'}
+                      image_url={
+                        trip.unsplash_image?.local_image_url || trip.image_url
+                      }
                       isOwner={currentUser?.id === trip.owner.id ? true : false}
                       ownerName={trip.owner.username}
                     />

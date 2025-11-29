@@ -264,7 +264,7 @@ export default function PlanDetailPage(): ReactElement {
                     notes={p.notes}
                     start_time={p.start_time}
                     end_time={p.end_time}
-                    image_url={p.image_url}
+                    image_url={p.unsplash_image?.local_image_url || p.image_url}
                     id={p.id}
                     mapbox_id={p.mapbox_id}
                     onPreviewComments={(mbid: string) =>
