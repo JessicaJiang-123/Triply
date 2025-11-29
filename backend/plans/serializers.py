@@ -71,7 +71,7 @@ class PlaceSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         # Required fields
-        required_fields = ["mapbox_id", "name", "address", "start_time", "end_time"]
+        required_fields = ["name", "address", "start_time", "end_time"]
 
         missing = [f for f in required_fields if not data.get(f)]
         if missing:
