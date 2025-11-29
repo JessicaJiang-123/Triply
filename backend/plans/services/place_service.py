@@ -169,6 +169,7 @@ def update_place_for_day(data, day_obj, place_id):
         "end_time",
         "notes",
         "category",
+        "mapbox_supported",
     ]:
         if field in data:
             setattr(place, field, data[field])
