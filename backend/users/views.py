@@ -27,7 +27,7 @@ def user_profile(request):
                 MAX_BYTES = 200 * 1024  # 200 KB
                 content = r.content[:MAX_BYTES]
                 if content:
-                    fname = f'avatars/{uuid.uuid4().hex}.jpg'
+                    fname = f'{uuid.uuid4().hex}.jpg'
                     profile.avatar.save(fname, ContentFile(content), save=False)
         except Exception:
             # ignore errors during avatar fetch; keep google_avatar_url for later use
