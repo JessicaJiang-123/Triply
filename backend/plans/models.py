@@ -1,6 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
-import uuid
+
+
+class UnsplashImage(models.Model):
+    unsplash_url = models.URLField(unique=True)
+    local_image = models.ImageField(upload_to="unsplash/")
+
+    def __str__(self):
+        return self.unsplash_url
 
 
 class Trip(models.Model):
@@ -13,7 +20,8 @@ class Trip(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
-    image_url = models.URLField(max_length=1024, blank=True, null=True)
+    image_url = models.CharField(max_length=1024, blank=True, null=True)
+    unsplash_image = models.ForeignKey(UnsplashImage, on_delete=models.SET_NULL, null=True, blank=True, related_name='trips')
     preferences = models.JSONField(default=list, blank=True) # List of user travel preferences
     shared_users = models.ManyToManyField(User, related_name='shared_trips', blank=True)
 
@@ -67,6 +75,7 @@ class Place(models.Model):
     longitude = models.FloatField(null=True, blank=True)
     description = models.TextField(blank=True)
     image_url = models.CharField(max_length=1024, blank=True, null=True)
+    unsplash_image = models.ForeignKey(UnsplashImage, on_delete=models.SET_NULL, null=True, blank=True, related_name='places')
     address = models.CharField(max_length=512, blank=True)
 
     class Meta:
