@@ -147,7 +147,7 @@ class DayForTripAPIView(APIView):
                 )
 
         day_obj = get_object_or_404(Day, pk=day_id, trip=trip)
-        serializer = DaySerializer(day_obj)
+        serializer = DaySerializer(day_obj, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -171,7 +171,7 @@ class PlaceForDayAPIView(APIView):
         if place_id is provided.
         """
         # validate request data
-        serializer = PlaceSerializer(data=request.data)
+        serializer = PlaceSerializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
             return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -185,7 +185,7 @@ class PlaceForDayAPIView(APIView):
             place = place_service.create_place_for_day(request.data.copy(), day_obj)
             status_code = status.HTTP_201_CREATED
         
-        return Response(PlaceSerializer(place).data, status=status_code)
+        return Response(PlaceSerializer(place, context={'request': request}).data, status=status_code)
 
     def get(self, request, trip_id, day_id, place_id):
         """
@@ -194,7 +194,7 @@ class PlaceForDayAPIView(APIView):
         _, day_obj = place_service.get_trip_and_day_for_user(trip_id, day_id, request.user)
 
         place = get_object_or_404(Place, pk=place_id, day=day_obj)
-        serializer = PlaceSerializer(place)
+        serializer = PlaceSerializer(place, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @transaction.atomic
@@ -204,7 +204,7 @@ class PlaceForDayAPIView(APIView):
         """
         _, day_obj = place_service.get_trip_and_day_for_user(trip_id, day_id, request.user)
         remaining_places = place_service.delete_place_for_day(day_obj, place_id)
-        serializer = PlaceSerializer(remaining_places, many=True)
+        serializer = PlaceSerializer(remaining_places, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
