@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Trip, Day, Place, RouteSegment, PlaceComment, CommentImage
+from .models import Trip, Day, Place, RouteSegment, PlaceComment, CommentImage, UnsplashImage
 from django.contrib.auth.models import User
 
 
@@ -26,7 +26,23 @@ class RouteSegmentSerializer(serializers.ModelSerializer):
         ]
 
 
+class UnsplashImageSerializer(serializers.ModelSerializer):
+    local_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnsplashImage
+        fields = ["unsplash_url", "local_image_url"]
+
+    def get_local_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.local_image and request:
+            return request.build_absolute_uri(obj.local_image.url)
+        return None
+
+
 class PlaceSerializer(serializers.ModelSerializer):
+    unsplash_image = UnsplashImageSerializer(read_only=True)
+
     class Meta:
         model = Place
         fields = [
@@ -44,6 +60,7 @@ class PlaceSerializer(serializers.ModelSerializer):
             "longitude",
             "description",
             "image_url",
+            "unsplash_image",
         ]
         read_only_fields = ['day']
 
@@ -72,24 +89,26 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 
 class DaySerializer(serializers.ModelSerializer):
-    places = PlaceSerializer(many=True, read_only=True)
+    places = serializers.SerializerMethodField()
     routes = serializers.SerializerMethodField()
 
     class Meta:
         model = Day
         fields = ["id", "date", "order", "places", "routes"]
 
+    def get_places(self, obj):
+        return PlaceSerializer(obj.places.all(), many=True, read_only=True, context=self.context).data
+
     def get_routes(self, obj):
         route_segments = RouteSegment.objects.filter(
             from_place__day=obj,
             to_place__day=obj
         ).select_related("from_place", "to_place")
-        return RouteSegmentSerializer(route_segments, many=True, read_only=True).data
+        return RouteSegmentSerializer(route_segments, many=True, read_only=True, context=self.context).data
 
 
 class TripSerializer(serializers.ModelSerializer):
     days = DaySerializer(many=True, read_only=True)
-    # user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     owner = SimpleUserSerializer(source='user', read_only=True)
     firstDayId = serializers.SerializerMethodField()
     shared_users = SimpleUserSerializer(many=True, read_only=True)
@@ -98,6 +117,7 @@ class TripSerializer(serializers.ModelSerializer):
         required=False, 
         allow_empty=True
     )
+    unsplash_image = UnsplashImageSerializer(read_only=True)
 
     class Meta:
         model = Trip
@@ -113,6 +133,7 @@ class TripSerializer(serializers.ModelSerializer):
             "created_at",
             "days",
             "image_url",
+            "unsplash_image",
             "preferences",
             "firstDayId",
             "shared_users",
