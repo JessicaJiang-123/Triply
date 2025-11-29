@@ -28,6 +28,7 @@ export default function AddPlacePage() {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
+    mapbox_supported: false,
     start_time: '',
     end_time: '',
     notes: '',
@@ -68,6 +69,7 @@ export default function AddPlacePage() {
         setFormData({
           name: place.name || '',
           address: place.address || '',
+          mapbox_supported: place.mapbox_supported || false,
           start_time: place.start_time || '',
           end_time: place.end_time || '',
           notes: place.notes || '',
@@ -103,6 +105,7 @@ export default function AddPlacePage() {
       ...prev,
       name: name,
       address: address,
+      mapbox_supported: true,
       mapbox_id: mapbox_id,
     }));
   };
@@ -112,6 +115,7 @@ export default function AddPlacePage() {
       ...prev,
       name: '',
       address: '',
+      mapbox_supported: false,
       mapbox_id: '',
     }));
   };
@@ -164,7 +168,6 @@ export default function AddPlacePage() {
         ...formData,
         trip: trip_id,
         day: day_id,
-        mapbox_supported: true,
         ...(imageUrl && { image_url: imageUrl }),
       };
       // console.log('Submitting place:', payload);
