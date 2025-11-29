@@ -6,7 +6,7 @@ import json
 
 from ..serializers import PlaceSerializer
 from .place_service import create_place_for_day
-from ..utils.map_utils import search_place
+from ..utils.map_utils import get_coordinate_from_address, search_place
 from .trip_service import create_trip_with_days
 
 # configure API key
@@ -122,6 +122,7 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
         "places": [
           {{
             "name": "Name of the place",
+            "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
             "start_time": "HH:MM",
             "end_time": "HH:MM",
             "notes": "A brief note about this place (<= 200 characters)"
@@ -228,11 +229,27 @@ def create_trip_plan_from_ai(user, trip_data):
             print(f"  Processing place {idx}/{len(day_plan_places)}:")
 
             search_place_name = place_data.get("name", "")
-            print(f"    Searching for place '{search_place_name}'...")
-            search_result = search_place(search_place_name, city, country)
+            print(f"    Searching for place '{search_place_name}' using place name...")
+            search_result = search_place(place_name=search_place_name, city=city, country=country)
             if not search_result:
-                print(f"    [Skipped] place '{search_place_name}': not found in mapbox search.")
-                continue
+                # Place not found in Mapbox, validate address
+                longitude, latitude = get_coordinate_from_address(place_data.get("address", ""))
+                if not longitude or not latitude:
+                    print(f"    [Skipped] place '{search_place_name}': not found in Mapbox.")
+                    continue
+                else:
+                    # search again using coordinates
+                    print(f"    Searching for place '{search_place_name}' again using coordinates...")
+                    search_result = search_place(coordinates=(longitude, latitude), city=city, country=country)
+                    if not search_result:
+                        # Use coordinates as mapbox_id fallback
+                        search_result = {
+                            "mapbox_id": f"coord-{latitude}-{longitude}",
+                            "name": place_data.get("name", ""),
+                            "full_address": place_data.get("address", ""),
+                            "mapbox_supported": False,
+                        }
+                        print(f"    [Fallback] Using provided address for place '{search_place_name}'.")
 
             print(f"    Found place: {search_result['name']} at {search_result['full_address']} (mapbox_id={search_result['mapbox_id']})")
 
@@ -241,6 +258,7 @@ def create_trip_plan_from_ai(user, trip_data):
                 "name": search_result['name'],
                 "address": search_result['full_address'],
                 "mapbox_id": search_result['mapbox_id'],
+                "mapbox_supported": search_result.get("mapbox_supported", True),
                 "start_time": place_data.get("start_time", ""),
                 "end_time": place_data.get("end_time", ""),
                 "notes": place_data.get("notes", ""),
