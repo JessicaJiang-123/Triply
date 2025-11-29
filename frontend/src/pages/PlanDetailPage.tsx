@@ -267,6 +267,7 @@ export default function PlanDetailPage(): ReactElement {
                     image_url={p.unsplash_image?.local_image_url || p.image_url}
                     id={p.id}
                     mapbox_id={p.mapbox_id}
+                    mapbox_supported={p.mapbox_supported}
                     onPreviewComments={(mbid: string) =>
                       setSelectedMapboxId(mbid)
                     }
