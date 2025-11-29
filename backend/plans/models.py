@@ -3,7 +3,8 @@ from django.contrib.auth.models import User
 
 
 class UnsplashImage(models.Model):
-    unsplash_url = models.URLField(max_length=2048, unique=True)
+    url_hash = models.CharField(max_length=64, unique=True)
+    unsplash_url = models.URLField(max_length=2048)
     local_image = models.ImageField(upload_to="unsplash/")
 
     def __str__(self):

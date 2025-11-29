@@ -4,6 +4,7 @@ import random
 import configparser
 import os
 from django.core.files.base import ContentFile
+from hashlib import sha256
 
 from ..models import UnsplashImage
 
@@ -73,12 +74,13 @@ def get_or_download_unsplash_image(url: str) -> UnsplashImage:
     Returns the local image URL for an Unsplash image.
     Downloads & caches the image if needed.
     """
+    url_hash = sha256(url.encode()).hexdigest()
     try:
-        obj = UnsplashImage.objects.get(unsplash_url=url)
+        obj = UnsplashImage.objects.get(url_hash=url_hash)
         return obj
 
     except UnsplashImage.DoesNotExist:
-        obj = UnsplashImage(unsplash_url=url)
+        obj = UnsplashImage(unsplash_url=url, url_hash=url_hash)
         if url != default_image_url:
             _download_and_store(url, obj)
         obj.save()
