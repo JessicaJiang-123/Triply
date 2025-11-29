@@ -7,3 +7,4 @@ my_env
 .idea
 images
 config.ini
+cleanup.sh
