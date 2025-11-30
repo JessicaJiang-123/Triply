@@ -23,17 +23,39 @@ export default function PlaceCommentPanel({
   return (
     <div
       className="p-3 d-flex flex-column"
-      style={{ height: '100%', position: 'relative' }}
+      style={{
+        height: '100%',
+        position: 'relative',
+        overflowY: 'auto',
+      }}
     >
-      <div className="d-flex justify-content-between align-items-start mb-2">
-        <div className="mb-0 fw-bold fs-4">{placeName || 'Place'}</div>
-        <button
-          type="button"
-          className="btn-close"
-          aria-label="Close"
-          onClick={onClose}
-        ></button>
-      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        style={{
+          position: 'sticky',
+          top: 4,
+          right: 4,
+          alignSelf: 'flex-end',
+          padding: '4px 8px',
+          border: '1px solid #ccc',
+          borderRadius: 6,
+          background: 'transparent',
+          zIndex: 20,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#e9ecef';
+          e.currentTarget.style.borderColor = '#999';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.borderColor = '#ccc';
+        }}
+      >
+        <i className="bi bi-x-lg"></i>
+      </button>
+
+      <div className="mb-0 fw-bold fs-4 mb-2">{placeName || 'Place'}</div>
 
       <PlaceImagePreview
         mapboxId={mapboxId}
@@ -41,9 +63,8 @@ export default function PlaceCommentPanel({
         refreshKey={refresh}
       />
 
-      <div style={{ marginTop: 12 }} className="d-flex flex-column">
+      <div style={{ marginTop: 12 }} className="d-flex flex-column flex-grow-1">
         <h5 className="mb-3">Real Comments</h5>
-        {/* make the comment list take the remaining space and scroll */}
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 120 }}>
           <CommentList mapboxId={mapboxId} refreshKey={refresh} />
         </div>
@@ -52,10 +73,8 @@ export default function PlaceCommentPanel({
       {/* absolutely positioned add comment form centered at bottom */}
       <div
         style={{
-          position: 'absolute',
-          left: '50%',
+          position: 'sticky',
           bottom: 12,
-          transform: 'translateX(-50%)',
           width: '100%',
           paddingLeft: 12,
           paddingRight: 12,
