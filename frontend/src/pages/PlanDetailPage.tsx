@@ -223,7 +223,7 @@ export default function PlanDetailPage(): ReactElement {
           <div
             className="d-flex flex-column"
             style={{
-              width: '35%',
+              width: '40%',
               borderRight: '1px solid #e0e0e0',
               backgroundColor: '#fff',
               overflow: 'hidden', // contain inner scroll only
@@ -253,7 +253,7 @@ export default function PlanDetailPage(): ReactElement {
               backgroundColor: '#fafafa',
               overflow: 'hidden', // keep right pane static
               display: 'flex',
-              maxWidth: '65%',
+              maxWidth: '60%',
             }}
           >
             <PlanMapCommentPanel
