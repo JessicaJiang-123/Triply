@@ -3,15 +3,14 @@ import type { ReactElement } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 import NavigationBar from '../components/NavigationBar';
-import { Button } from 'react-bootstrap';
-import PlaceCard from '../components/PlaceCard';
-import PlaceCommentPanel from '../components/PlaceCommentPanel';
-import MapComponent from '../components/MapComponent';
 import { useRef } from 'react';
 import type { Place, RouteSegment, Trip } from '../types/tripTypes';
 import ShareTripModal from '../components/ShareTripModal';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { useIsMobile } from '../utils/useIsMobile';
+import PlanMapCommentPanel from '../components/PlanMapCommentPanel';
+import PlanPlacesPanel from '../components/PlanPlacesPanel';
 
 export default function PlanDetailPage(): ReactElement {
   const { trip_id, day_id } = useParams<{ trip_id: string; day_id: string }>();
@@ -27,6 +26,7 @@ export default function PlanDetailPage(): ReactElement {
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const { currentUser } = useContext(AuthContext);
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   // fetch trip details to populate date bar
@@ -156,213 +156,116 @@ export default function PlanDetailPage(): ReactElement {
   return (
     <>
       <NavigationBar title={trip.name} />
-      <div
-        style={{
-          height: 'calc(100vh - 64px)', // 64px = Navbar height
-          display: 'flex',
-          overflow: 'hidden', // prevent whole page scrolling
-        }}
-      >
-        {/* Left Column — Date Bar + Place List + Add Button */}
+
+      {isMobile ? (
         <div
-          className="d-flex flex-column"
+          className="d-flex d-md-none flex-column"
           style={{
-            width: '35%',
-            borderRight: '1px solid #e0e0e0',
-            backgroundColor: '#fff',
-            overflow: 'hidden', // contain inner scroll only
+            height: 'calc(100vh - 64px)', // 64px = Navbar height
+            overflow: 'hidden', // prevent whole page scrolling
           }}
         >
-          {/* Date bar (fixed at top) */}
-          <div className="d-flex align-items-center mb-3 px-2 pt-3 flex-shrink-0">
-            <Button
-              variant="light"
-              size="sm"
-              className="me-2 d-flex align-items-center justify-content-center"
-              onClick={() =>
-                dateRowRef.current?.scrollBy({ left: -150, behavior: 'smooth' })
-              }
-            >
-              <i className="bi bi-caret-left-fill fs-5"></i>
-            </Button>
-
-            <div
-              ref={dateRowRef}
-              className="py-2"
-              style={{
-                overflowX: 'auto',
-                whiteSpace: 'nowrap',
-                flex: 1,
-                paddingBottom: '4px',
-              }}
-            >
-              {trip.days.map((d) => (
-                <div
-                  key={d.id}
-                  style={{ display: 'inline-block', marginRight: 8 }}
-                >
-                  <button
-                    onClick={() => navigate(`/trips/${trip_id}/days/${d.id}`)}
-                    className={`btn px-3 ${
-                      Number(day_id) === d.id
-                        ? 'fw-bold text-dark border-bottom border-primary'
-                        : 'text-muted'
-                    }`}
-                    style={{
-                      fontSize: 16,
-                      paddingTop: 6,
-                      paddingBottom: 6,
-                      borderRadius: 6,
-                      backgroundColor: 'transparent',
-                    }}
-                  >
-                    {d.date}
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <Button
-              variant="light"
-              size="sm"
-              className="ms-2 d-flex align-items-center justify-content-center"
-              onClick={() =>
-                dateRowRef.current?.scrollBy({ left: 150, behavior: 'smooth' })
-              }
-            >
-              <i className="bi bi-caret-right-fill fs-5"></i>
-            </Button>
-
-            {/* Share Button */}
-            {isOwner && (
-              <Button
-                variant="light"
-                size="sm"
-                // ... (other props)
-                onClick={handleShare}
-                title="Share your travel plan"
-              >
-                <i className="bi bi-share-fill fs-5 text-primary"></i>
-              </Button>
-            )}
-          </div>
-
-          {/* Scrollable list */}
+          {/* Top Panel — Map / Comment Panel */}
           <div
-            className="flex-grow-1 overflow-auto px-3"
             style={{
-              paddingBottom: '80px', // space for add button
+              flexGrow: 1,
+              backgroundColor: '#fafafa',
+              overflow: 'auto',
+              display: 'flex',
+              maxHeight: '55%',
             }}
           >
-            {places.length > 0 ? (
-              places.map((p, index) => (
-                <div key={p.id} style={{ marginBottom: '1rem' }}>
-                  <PlaceCard
-                    order={p.order}
-                    name={p.name}
-                    address={p.address || ''}
-                    notes={p.notes}
-                    start_time={p.start_time}
-                    end_time={p.end_time}
-                    image_url={p.unsplash_image?.local_image_url || p.image_url}
-                    id={p.id}
-                    mapbox_id={p.mapbox_id}
-                    mapbox_supported={p.mapbox_supported}
-                    onPreviewComments={(mbid: string) =>
-                      setSelectedMapboxId(mbid)
-                    }
-                    onDelete={handleDeletePlace}
-                    trip_id={trip.id}
-                    day_id={Number(day_id)}
-                    isOwner={isOwner}
-                  />
-                  {/* Clickable distance + duration line */}
-                  {index < routes.length && (
-                    <div
-                      onClick={() =>
-                        setSelectedRouteId((prev) =>
-                          prev === routes[index].route_id
-                            ? null
-                            : routes[index].route_id
-                        )
-                      }
-                      className={`text-center small my-2 py-1 rounded ${
-                        selectedRouteId === routes[index].route_id
-                          ? 'border border-primary'
-                          : 'border border-transparent text-muted'
-                      }`}
-                      style={{
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      <i className="bi bi-arrow-down-short me-1"></i>
-                      {routes[index].distance_km.toFixed(1)} km ·{' '}
-                      {Math.round(routes[index].travel_time_min)} min
-                      <i className="bi bi-car-front-fill ms-2 text-secondary"></i>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="text-center text-muted mt-5">
-                No places added for this day.
-              </div>
-            )}
+            <PlanMapCommentPanel
+              selectedMapboxId={selectedMapboxId}
+              setSelectedMapboxId={setSelectedMapboxId}
+              places={places}
+              trip={trip}
+              displayedRoutes={displayedRoutes}
+            />
           </div>
 
-          {/* Fixed bottom Add button */}
-          {isOwner && (
-            <div
-              className="p-3 border-top flex-shrink-0"
-              style={{
-                backgroundColor: '#fff',
-                boxShadow: '0 -2px 8px rgba(0,0,0,0.05)',
-                zIndex: 10,
-              }}
-            >
-              <Button
-                className="w-100 d-flex align-items-center justify-content-center"
-                variant="primary"
-                onClick={handleAddPlace}
-              >
-                <i className="bi bi-plus-circle me-2"></i> Add new place
-              </Button>
-            </div>
-          )}
+          {/* Bottom Panel — Date Bar + Place List + Add Button */}
+          <div
+            className="d-flex flex-column"
+            style={{
+              height: '45%',
+              borderTop: '1px solid #e0e0e0',
+              backgroundColor: '#fff',
+              overflow: 'hidden',
+            }}
+          >
+            <PlanPlacesPanel
+              dateRowRef={dateRowRef}
+              trip={trip}
+              trip_id={trip_id}
+              day_id={day_id}
+              places={places}
+              routes={routes}
+              isOwner={isOwner}
+              handleAddPlace={handleAddPlace}
+              handleDeletePlace={handleDeletePlace}
+              selectedRouteId={selectedRouteId}
+              setSelectedRouteId={setSelectedRouteId}
+              setSelectedMapboxId={setSelectedMapboxId}
+              handleShare={handleShare}
+            />
+          </div>
         </div>
-
-        {/* Right Column — Comment panel only */}
+      ) : (
         <div
+          className="d-none d-md-flex"
           style={{
-            flexGrow: 1,
-            backgroundColor: '#fafafa',
-            overflow: 'hidden', // keep right pane static
-            display: 'flex',
-            maxWidth: '65%',
+            height: 'calc(100vh - 64px)', // 64px = Navbar height
+            overflow: 'hidden', // prevent whole page scrolling
           }}
         >
-          {/* Map / Place Detail */}
-          {selectedMapboxId ? (
-            <div className="w-100">
-              <PlaceCommentPanel
-                mapboxId={selectedMapboxId}
-                placeName={
-                  places.find((p) => p.mapbox_id === selectedMapboxId)?.name ||
-                  ''
-                }
-                onClose={() => setSelectedMapboxId(null)}
-              />
-            </div>
-          ) : (
-            <MapComponent
+          {/* Left Column — Date Bar + Place List + Add Button */}
+          <div
+            className="d-flex flex-column"
+            style={{
+              width: '35%',
+              borderRight: '1px solid #e0e0e0',
+              backgroundColor: '#fff',
+              overflow: 'hidden', // contain inner scroll only
+            }}
+          >
+            <PlanPlacesPanel
+              dateRowRef={dateRowRef}
+              trip={trip}
+              trip_id={trip_id}
+              day_id={day_id}
               places={places}
-              center={[trip.longitude, trip.latitude]}
-              routes={displayedRoutes}
+              routes={routes}
+              isOwner={isOwner}
+              handleAddPlace={handleAddPlace}
+              handleDeletePlace={handleDeletePlace}
+              selectedRouteId={selectedRouteId}
+              setSelectedRouteId={setSelectedRouteId}
+              setSelectedMapboxId={setSelectedMapboxId}
+              handleShare={handleShare}
             />
-          )}
+          </div>
+
+          {/* Right Column — Comment panel only */}
+          <div
+            style={{
+              flexGrow: 1,
+              backgroundColor: '#fafafa',
+              overflow: 'hidden', // keep right pane static
+              display: 'flex',
+              maxWidth: '65%',
+            }}
+          >
+            <PlanMapCommentPanel
+              selectedMapboxId={selectedMapboxId}
+              setSelectedMapboxId={setSelectedMapboxId}
+              places={places}
+              trip={trip}
+              displayedRoutes={displayedRoutes}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Share Trip Modal */}
       <ShareTripModal
