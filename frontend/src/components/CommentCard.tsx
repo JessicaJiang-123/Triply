@@ -84,7 +84,10 @@ export default function CommentCard({
 
         {/* Thumbnails */}
         {images.length > 0 && (
-          <div className="d-flex align-items-start mb-1">
+          <div
+            className="d-flex flex-wrap mb-2"
+            style={{ gap: 12 }} // nicer spacing
+          >
             {images.map((img) => (
               <div
                 key={img.id}
@@ -97,7 +100,6 @@ export default function CommentCard({
                   position: 'relative',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                   background: '#f6f6f6',
-                  marginRight: 12,
                 }}
               >
                 <img
