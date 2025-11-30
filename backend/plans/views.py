@@ -293,8 +293,8 @@ class PlaceCommentAPIView(APIView):
                 if isinstance(val, str):
                     image_urls.append(val)
         # enforce max images
-        if len(image_urls) > 3:
-            return Response({"image_urls": "You can upload a maximum of 3 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(image_urls) > 4:
+            return Response({"image_urls": "You can upload a maximum of 4 images per comment."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate each URL comes from our MEDIA_URL and that the file exists in storage
         def _storage_path_from_url(u: str) -> str | None:
@@ -393,7 +393,7 @@ class UploadCommentImageAPIView(APIView):
 
         urls = []
         # cap a reasonable number per request
-        MAX_FILES = 3
+        MAX_FILES = 4
         MAX_SIZE = 5 * 1024 * 1024  # 5MB
         for f in files[:MAX_FILES]:
             # server-side validations: mime and size
