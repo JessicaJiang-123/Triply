@@ -38,6 +38,17 @@ export default function PlanPlacesPanel({
   const navigate = useNavigate();
   const hasUnsupportedPlace = places.some((p) => !p.mapbox_supported);
 
+  function scrollDateBar(offset: number) {
+    const el = dateRowRef.current;
+    if (!el) return;
+
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const current = el.scrollLeft;
+    const target = Math.min(maxScroll, Math.max(0, current + offset));
+
+    el.scrollTo({ left: target, behavior: 'smooth' });
+  }
+
   return (
     <>
       {/* Date bar (fixed at top) */}
@@ -46,9 +57,7 @@ export default function PlanPlacesPanel({
           variant="light"
           size="sm"
           className="me-2 d-flex align-items-center justify-content-center"
-          onClick={() =>
-            dateRowRef.current?.scrollBy({ left: -150, behavior: 'smooth' })
-          }
+          onClick={() => scrollDateBar(-150)}
         >
           <i className="bi bi-caret-left-fill fs-5"></i>
         </Button>
@@ -90,9 +99,7 @@ export default function PlanPlacesPanel({
           variant="light"
           size="sm"
           className="ms-2 d-flex align-items-center justify-content-center"
-          onClick={() =>
-            dateRowRef.current?.scrollBy({ left: 150, behavior: 'smooth' })
-          }
+          onClick={() => scrollDateBar(150)}
         >
           <i className="bi bi-caret-right-fill fs-5"></i>
         </Button>
