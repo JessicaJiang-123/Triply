@@ -11,6 +11,7 @@ import {
 } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
 import axiosInstance from '../api/axiosInstance';
+import { useIsMobile } from '../utils/useIsMobile';
 
 type NavigationBarProps = {
   title?: string;
@@ -18,6 +19,7 @@ type NavigationBarProps = {
 
 export default function NavigationBar({ title }: NavigationBarProps) {
   const { currentUser, setCurrentUser } = useContext(AuthContext);
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -59,32 +61,76 @@ export default function NavigationBar({ title }: NavigationBarProps) {
             </Navbar.Brand>
           </OverlayTrigger>
 
+          {/* Hide title on mobile */}
           {title && (
-            <span className="fw-semibold text-secondary fs-5">{title}</span>
+            <span className="fw-semibold text-secondary fs-5 d-none d-md-inline">
+              {title}
+            </span>
           )}
         </div>
 
-        <Navbar.Toggle aria-controls="user-nav-content" />
+        <Navbar.Toggle
+          aria-controls="user-nav-content"
+          style={{ padding: '4px 8px', fontSize: '0.9rem' }}
+        />
         <Navbar.Collapse id="user-nav-content" className="justify-content-end">
           {/* Right: User info & Logout */}
           {currentUser && (
-            <Nav className="ms-auto align-items-center">
-              <span className="me-2 text-dark">
-                Welcome, <strong>{currentUser.username}</strong>
-              </span>
-              <Image
-                src={currentUser.picture}
-                alt="User avatar"
-                roundedCircle
-                width={36}
-                height={36}
-                className="me-3 border border-primary"
-                referrerPolicy="no-referrer"
-              />
-              <Button variant="outline-danger" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
-            </Nav>
+            <>
+              {isMobile ? (
+                <Nav className="d-flex flex-column d-md-none mt-3 text-center w-100">
+                  {/* Line 1: Welcome */}
+                  <span className="text-dark mb-2 w-100">
+                    Welcome, <strong>{currentUser.username}</strong>
+                  </span>
+
+                  {/* Line 2: Avatar + Logout (centered row) */}
+                  <div className="d-flex justify-content-center align-items-center w-100">
+                    <Image
+                      src={currentUser.picture}
+                      alt="User avatar"
+                      roundedCircle
+                      width={40}
+                      height={40}
+                      className="me-3 border border-primary"
+                      referrerPolicy="no-referrer"
+                    />
+
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                </Nav>
+              ) : (
+                <Nav className="ms-auto align-items-center d-none d-md-flex">
+                  <span className="me-2 text-dark">
+                    Welcome, <strong>{currentUser.username}</strong>
+                  </span>
+
+                  <Image
+                    src={currentUser.picture}
+                    alt="User avatar"
+                    roundedCircle
+                    width={36}
+                    height={36}
+                    className="me-3 border border-primary"
+                    referrerPolicy="no-referrer"
+                  />
+
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </Button>
+                </Nav>
+              )}
+            </>
           )}
         </Navbar.Collapse>
       </Container>

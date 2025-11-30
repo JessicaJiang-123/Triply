@@ -51,7 +51,7 @@ export default function AddCommentForm({
     setUploadError(null);
     setUploading(true);
     try {
-      const maxFiles = Math.max(0, 3 - imageUrls.length);
+      const maxFiles = Math.max(0, 4 - imageUrls.length);
       const toUpload = Array.from(files).slice(0, maxFiles);
       // client-side validation: type and size (5MB)
       const MAX_SIZE = 5 * 1024 * 1024;
@@ -68,7 +68,7 @@ export default function AddCommentForm({
         }
       }
       if (toUpload.length === 0) {
-        setUploadError('You can only attach up to 3 images per comment.');
+        setUploadError('You can only attach up to 4 images per comment.');
         return;
       }
 
@@ -102,7 +102,7 @@ export default function AddCommentForm({
           return undefined;
         })
         .filter(Boolean) as string[];
-      setImageUrls((s) => [...s, ...urls].slice(0, 3));
+      setImageUrls((s) => [...s, ...urls].slice(0, 4));
     } catch {
       // console.error('Upload failed', err);
       setUploadError('Upload failed');
@@ -129,9 +129,9 @@ export default function AddCommentForm({
             multiple
             onClick={(e) => {
               // prevent opening file picker when already at limit and show an error
-              if (imageUrls.length >= 3) {
+              if (imageUrls.length >= 4) {
                 e.preventDefault();
-                setUploadError('You can only upload up to 3 images');
+                setUploadError('You can only upload up to 4 images');
                 return;
               }
               // clear previous upload errors when user intentionally opens picker

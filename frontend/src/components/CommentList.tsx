@@ -63,7 +63,9 @@ export default function CommentList({
   return (
     <div
       className="comment-list-scrollable"
-      style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}
+      style={{
+        overflowX: 'hidden',
+      }}
       role="list"
     >
       {list.map((c) => (
