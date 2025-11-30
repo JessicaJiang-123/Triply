@@ -69,7 +69,10 @@ export default function NavigationBar({ title }: NavigationBarProps) {
           )}
         </div>
 
-        <Navbar.Toggle aria-controls="user-nav-content" />
+        <Navbar.Toggle
+          aria-controls="user-nav-content"
+          style={{ padding: '4px 8px', fontSize: '0.9rem' }}
+        />
         <Navbar.Collapse id="user-nav-content" className="justify-content-end">
           {/* Right: User info & Logout */}
           {currentUser && (
