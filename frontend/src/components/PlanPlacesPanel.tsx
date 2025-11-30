@@ -36,6 +36,7 @@ export default function PlanPlacesPanel({
   handleShare,
 }: PlanPlacesPanelProps): ReactElement {
   const navigate = useNavigate();
+  const hasUnsupportedPlace = places.some((p) => !p.mapbox_supported);
 
   return (
     <>
@@ -172,6 +173,19 @@ export default function PlanPlacesPanel({
         ) : (
           <div className="text-center text-muted mt-5">
             No places added for this day.
+          </div>
+        )}
+
+        {hasUnsupportedPlace && (
+          <div
+            className="mt-3 small text-warning d-flex align-items-start"
+            style={{ gap: 8 }}
+          >
+            <i className="bi bi-exclamation-triangle-fill"></i>
+            <span>
+              Some places in this day are not supported or verified by the map
+              system. Coordinates or routes may be inaccurate.
+            </span>
           </div>
         )}
       </div>
