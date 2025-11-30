@@ -131,12 +131,10 @@ export default function PlanPlacesPanel({
                 id={p.id}
                 mapbox_id={p.mapbox_id}
                 mapbox_supported={p.mapbox_supported}
-                onPreviewComments={
-                  (mbid: string) => {
-                    setSelectedRouteId(null);
-                    setSelectedMapboxId(mbid)
-                  }
-                }
+                onPreviewComments={(mbid: string) => {
+                  setSelectedRouteId(null);
+                  setSelectedMapboxId(mbid);
+                }}
                 onDelete={handleDeletePlace}
                 trip_id={trip.id}
                 day_id={Number(day_id)}
@@ -151,9 +149,8 @@ export default function PlanPlacesPanel({
                       prev === routes[index].route_id
                         ? null
                         : routes[index].route_id
-                    )
-                  }
-                  }
+                    );
+                  }}
                   className={`text-center small my-2 py-1 rounded ${
                     selectedRouteId === routes[index].route_id
                       ? 'border border-primary'
