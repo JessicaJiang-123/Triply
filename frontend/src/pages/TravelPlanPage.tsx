@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { Container, Button, Row, Alert } from 'react-bootstrap';
+import { Container, Button, Row, Col, Alert } from 'react-bootstrap';
 import NavigationBar from '../components/NavigationBar';
 import TripCard from '../components/TripCard';
 import { useNavigate, Link } from 'react-router-dom';
@@ -135,27 +135,29 @@ const TravelPlanPage: React.FC = () => {
                   return selectedTab === 'owned' ? isOwner : !isOwner;
                 })
                 .map((trip) => (
-                  <Link
-                    key={trip.id}
-                    to={`/trips/${trip.id}/days/${trip.firstDayId}`}
-                    className="col"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    <TripCard
-                      id={trip.id}
-                      onDelete={handleDelete}
-                      onShare={handleShare}
-                      title={trip.name}
-                      location={trip.destination_city}
-                      start_date={trip.start_date}
-                      end_date={trip.end_date}
-                      image_url={
-                        trip.unsplash_image?.local_image_url || trip.image_url
-                      }
-                      isOwner={currentUser?.id === trip.owner.id ? true : false}
-                      ownerName={trip.owner.username}
-                    />
-                  </Link>
+                  <Col key={trip.id}>
+                    <Link
+                      key={trip.id}
+                      to={`/trips/${trip.id}/days/${trip.firstDayId}`}
+                      className="col"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <TripCard
+                        id={trip.id}
+                        onDelete={handleDelete}
+                        onShare={handleShare}
+                        title={trip.name}
+                        location={trip.destination_city}
+                        start_date={trip.start_date}
+                        end_date={trip.end_date}
+                        image_url={
+                          trip.unsplash_image?.local_image_url || trip.image_url
+                        }
+                        isOwner={currentUser?.id === trip.owner.id ? true : false}
+                        ownerName={trip.owner.username}
+                      />
+                    </Link>
+                  </Col>
                 ))}
             </Row>
 
