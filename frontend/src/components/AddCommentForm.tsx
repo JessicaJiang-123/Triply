@@ -120,7 +120,7 @@ export default function AddCommentForm({
           onChange={(e) => setText(e.target.value)}
           disabled={loading}
         />
-        <label className="btn btn-light mb-0" title="Upload image">
+        <label className="btn btn-light mb-0 border" title="Upload image">
           <i className="bi bi-image" />
           <input
             type="file"
