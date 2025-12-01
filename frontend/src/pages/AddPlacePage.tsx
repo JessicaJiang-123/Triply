@@ -106,7 +106,22 @@ export default function AddPlacePage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'notes') {
+      // Strip zero-width chars and clamp to 200 chars
+      const cleaned = value
+        .replace(/\u200B/g, '')
+        .replace(/\u200C/g, '')
+        .replace(/\u200D/g, '')
+        .replace(/\uFEFF/g, '')
+        .slice(0, 200);
+
+      setFormData((prev) => ({
+        ...prev,
+        notes: cleaned,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     setErrorMsg(null);
   };
 
