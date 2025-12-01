@@ -92,9 +92,10 @@ export default function CommentCard({
               <div
                 key={img.id}
                 style={{
-                  flex: '0 0 auto',
-                  width: 150,
-                  height: 100,
+                  flex: '1 1 calc(50% - 12px)', // responsive on mobile (2 per row)
+                  maxWidth: 150,
+                  maxHeight: 100,
+                  aspectRatio: '3 / 2',
                   borderRadius: 12,
                   overflow: 'hidden',
                   position: 'relative',
