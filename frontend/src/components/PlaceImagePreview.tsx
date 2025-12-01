@@ -103,7 +103,13 @@ export default function PlaceImagePreview({
           <div
             key={img.id || idx}
             className="flex-shrink-0 rounded overflow-hidden"
-            style={{ minWidth: 240, height: 160 }}
+            style={{
+              width: '60vw', // 60% of viewport width
+              maxWidth: 240, // prevent too large on desktop
+              height: '40vw', // height proportional to width
+              maxHeight: 160, // prevent too large on desktop
+              aspectRatio: '3 / 2',
+            }}
           >
             <img
               src={img.image_url}

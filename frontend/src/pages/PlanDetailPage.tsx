@@ -172,7 +172,7 @@ export default function PlanDetailPage(): ReactElement {
               backgroundColor: '#fafafa',
               overflow: 'auto',
               display: 'flex',
-              maxHeight: '55%',
+              maxHeight: '40%',
             }}
           >
             <PlanMapCommentPanel
@@ -188,7 +188,7 @@ export default function PlanDetailPage(): ReactElement {
           <div
             className="d-flex flex-column"
             style={{
-              height: '45%',
+              height: '60%',
               borderTop: '1px solid #e0e0e0',
               backgroundColor: '#fff',
               overflow: 'hidden',
@@ -223,7 +223,7 @@ export default function PlanDetailPage(): ReactElement {
           <div
             className="d-flex flex-column"
             style={{
-              width: '35%',
+              width: '40%',
               borderRight: '1px solid #e0e0e0',
               backgroundColor: '#fff',
               overflow: 'hidden', // contain inner scroll only
@@ -246,14 +246,14 @@ export default function PlanDetailPage(): ReactElement {
             />
           </div>
 
-          {/* Right Column — Comment panel only */}
+          {/* Right Column — Map / Comment Panel */}
           <div
             style={{
               flexGrow: 1,
               backgroundColor: '#fafafa',
               overflow: 'hidden', // keep right pane static
               display: 'flex',
-              maxWidth: '65%',
+              maxWidth: '60%',
             }}
           >
             <PlanMapCommentPanel
