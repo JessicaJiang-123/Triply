@@ -87,7 +87,7 @@ export default function PlanDetailPage(): ReactElement {
   }, [trip_id, day_id]);
 
   // Delete place handler
-  async function handleDeletePlace(placeId: number, mapboxId: string) {
+  async function handleDeletePlace(placeId: number, mapboxId?: string | null) {
     if (!trip_id || !selectedDayId) return;
     if (!window.confirm('Are you sure you want to delete this place?')) {
       return;
@@ -115,7 +115,7 @@ export default function PlanDetailPage(): ReactElement {
       });
 
       // If the deleted place was being viewed in the comment panel, close it
-      if (selectedMapboxId === mapboxId) {
+      if (mapboxId && selectedMapboxId === mapboxId) {
         setSelectedMapboxId(null);
       }
     } catch (err) {
