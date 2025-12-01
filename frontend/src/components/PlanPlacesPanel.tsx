@@ -13,7 +13,7 @@ type PlanPlacesPanelProps = {
   routes: RouteSegment[];
   isOwner: boolean;
   handleAddPlace: () => void;
-  handleDeletePlace: (id: number, mapbox_id: string) => Promise<void>;
+  handleDeletePlace: (id: number, mapbox_id?: string | null) => Promise<void>;
   selectedRouteId: string | null;
   setSelectedRouteId: Dispatch<SetStateAction<string | null>>;
   setSelectedMapboxId: Dispatch<SetStateAction<string | null>>;
