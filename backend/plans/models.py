@@ -51,7 +51,8 @@ class SharedPlace(models.Model):
 
     A mapbox_id uniquely identifies a Mapbox feature.
     """
-    mapbox_id = models.CharField(max_length=255, unique=True)
+    mapbox_id = models.CharField(max_length=64, unique=True) # Hash of the raw mapbox_id
+    raw_mapbox_id = models.TextField()
     name = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
@@ -62,7 +63,8 @@ class Place(models.Model):
     day = models.ForeignKey(
         Day, on_delete=models.CASCADE, related_name='places')
     # Mapbox feature identifier
-    mapbox_id = models.CharField(max_length=255, blank=True, null=True)
+    mapbox_id = models.CharField(max_length=64, blank=True, null=True) # Hash of the raw mapbox_id
+    raw_mapbox_id = models.TextField(blank=True, null=True)
     # Whether this place is fully supported / recognized by Mapbox
     mapbox_supported = models.BooleanField(default=False)
     # Bind to the canonical SharedPlace
