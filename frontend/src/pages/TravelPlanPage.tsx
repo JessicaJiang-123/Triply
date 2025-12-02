@@ -153,7 +153,9 @@ const TravelPlanPage: React.FC = () => {
                         image_url={
                           trip.unsplash_image?.local_image_url || trip.image_url
                         }
-                        isOwner={currentUser?.id === trip.owner.id ? true : false}
+                        isOwner={
+                          currentUser?.id === trip.owner.id ? true : false
+                        }
                         ownerName={trip.owner.username}
                       />
                     </Link>
