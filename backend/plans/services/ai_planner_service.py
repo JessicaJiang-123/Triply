@@ -258,7 +258,7 @@ def create_trip_plan_from_ai(user, trip_data):
             place_input_data = {
                 "name": search_result['name'],
                 "address": search_result['full_address'],
-                "mapbox_id": search_result.get('mapbox_id', None),
+                "raw_mapbox_id": search_result.get('mapbox_id', None),
                 "mapbox_supported": search_result.get("mapbox_supported", True),
                 "start_time": place_data.get("start_time", ""),
                 "end_time": place_data.get("end_time", ""),

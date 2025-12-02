@@ -7,6 +7,7 @@ from ..models import Day, Place, Trip, RouteSegment, SharedPlace
 from ..serializers import PlaceSerializer
 from ..utils.image_utils import fetch_image_url, get_or_download_unsplash_image
 from ..utils.map_utils import get_coordinate_from_address, fetch_route_between_points
+from hashlib import sha256
 
 def get_trip_and_day_for_user(trip_id, day_id, user):
     """
@@ -118,12 +119,14 @@ def create_place_for_day(data, day_obj):
                 coordinates=route_data['coordinates']
             )
 
-    mapbox_id = data.get('mapbox_id', None)
-    if mapbox_id:
+    raw_mapbox_id = data.get('raw_mapbox_id', None)
+    if raw_mapbox_id:
+        mapbox_id = sha256(raw_mapbox_id.encode()).hexdigest()
         # link (or create) the SharedPlace if mapbox_id is provided
         shared_place, _ = SharedPlace.objects.get_or_create(
             mapbox_id=mapbox_id,
             defaults={
+                'raw_mapbox_id': raw_mapbox_id,
                 'name': place.name or '' # type: ignore
             }
         )
@@ -226,20 +229,23 @@ def update_place_for_day(data, day_obj, place_id):
                     }
                 )
 
-    new_mapbox_id = data.get('mapbox_id', None)
+    new_raw_mapbox_id = data.get('raw_mapbox_id', None)
     # If mapbox_id provided and changed, update shared_place accordingly
-    if new_mapbox_id and place.mapbox_id != new_mapbox_id:
-        # Rebind to the new SharedPlace
-        shared_place, _ = SharedPlace.objects.get_or_create(
-            mapbox_id=new_mapbox_id,
-            defaults={
-                'name': data.get('name', place.name) or ''
-            }
-        )
-        place.shared_place = shared_place # type: ignore
-        place.mapbox_id = new_mapbox_id
-        place.save() # type: ignore
-        place.refresh_from_db() # type: ignore
+    if new_raw_mapbox_id:
+        new_mapbox_id = sha256(new_raw_mapbox_id.encode()).hexdigest()
+        if new_mapbox_id != place.mapbox_id:
+            # Rebind to the new SharedPlace
+            shared_place, _ = SharedPlace.objects.get_or_create(
+                mapbox_id=new_mapbox_id,
+                defaults={
+                    'raw_mapbox_id': new_raw_mapbox_id,
+                    'name': data.get('name', place.name) or ''
+                }
+            )
+            place.shared_place = shared_place # type: ignore
+            place.mapbox_id = new_mapbox_id
+            place.save() # type: ignore
+            place.refresh_from_db() # type: ignore
 
     return place
 

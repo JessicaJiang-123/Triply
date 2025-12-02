@@ -32,7 +32,7 @@ export default function AddPlacePage() {
     start_time: '',
     end_time: '',
     notes: '',
-    mapbox_id: null,
+    raw_mapbox_id: null,
   });
 
   const [changeCover, setChangeCover] = useState(false);
@@ -84,7 +84,7 @@ export default function AddPlacePage() {
           start_time: place.start_time || '',
           end_time: place.end_time || '',
           notes: place.notes || '',
-          mapbox_id: place.mapbox_id || null,
+          raw_mapbox_id: place.raw_mapbox_id || null,
         });
       } catch (err) {
         // console.error('Failed to fetch place details:', error);
@@ -151,7 +151,7 @@ export default function AddPlacePage() {
       name: name,
       address: address,
       mapbox_supported: true,
-      mapbox_id: mapbox_id,
+      raw_mapbox_id: mapbox_id,
     }));
   };
 
@@ -161,7 +161,7 @@ export default function AddPlacePage() {
       name: '',
       address: '',
       mapbox_supported: false,
-      mapbox_id: null,
+      raw_mapbox_id: null,
     }));
   };
 

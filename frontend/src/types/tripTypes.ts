@@ -30,6 +30,7 @@ export type Place = {
   unsplash_image?: UnsplashImage;
   address?: string;
   mapbox_id?: string;
+  raw_mapbox_id?: string;
   mapbox_supported: boolean;
 };
 
@@ -70,6 +71,7 @@ export type RouteSegment = {
 
 export type SharedPlace = {
   mapbox_id: string;
+  raw_mapbox_id: string;
   name: string;
 };
 
