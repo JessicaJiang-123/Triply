@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 class UnsplashImage(models.Model):
     url_hash = models.CharField(max_length=64, unique=True)
-    unsplash_url = models.URLField(max_length=2048)
+    unsplash_url = models.TextField()
     local_image = models.ImageField(upload_to="unsplash/")
 
     def __str__(self):
@@ -21,7 +21,7 @@ class Trip(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
-    image_url = models.CharField(max_length=1024, blank=True, null=True)
+    image_url = models.TextField(blank=True, null=True)
     unsplash_image = models.ForeignKey(UnsplashImage, on_delete=models.SET_NULL, null=True, blank=True, related_name='trips')
     preferences = models.JSONField(default=list, blank=True) # List of user travel preferences
     shared_users = models.ManyToManyField(User, related_name='shared_trips', blank=True)
@@ -77,7 +77,7 @@ class Place(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     description = models.TextField(blank=True)
-    image_url = models.CharField(max_length=1024, blank=True, null=True)
+    image_url = models.TextField(blank=True, null=True)
     unsplash_image = models.ForeignKey(UnsplashImage, on_delete=models.SET_NULL, null=True, blank=True, related_name='places')
     address = models.CharField(max_length=512, blank=True)
 
