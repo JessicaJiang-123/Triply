@@ -185,10 +185,14 @@ export default function PlanPlacesPanel({
 
         {hasUnsupportedPlace && (
           <div
-            className="mt-3 small text-warning d-flex align-items-start"
-            style={{ gap: 8 }}
+            className="mt-3 small d-flex align-items-start"
+            style={{
+              fontSize: 12,
+              gap: 6,
+              color: '#6c757d',
+            }}
           >
-            <i className="bi bi-exclamation-triangle-fill"></i>
+            <i className="bi bi-exclamation-circle"></i>
             <span>
               Some places in this day are not supported or verified by the map
               system. Coordinates or routes may be inaccurate.

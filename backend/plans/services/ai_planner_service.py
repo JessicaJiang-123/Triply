@@ -1,5 +1,6 @@
 import time
 import google.genai as genai
+from google.genai import types
 import configparser
 import os
 import json
@@ -13,6 +14,8 @@ from .trip_service import create_trip_with_days
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path)
+
+google_map_supported = config.getboolean('Gemini', 'GOOGLE_MAP_SUPPORTED', fallback=False)
 
 client = None
 try:
@@ -32,7 +35,7 @@ except (configparser.NoSectionError, configparser.NoOptionError) as e:
 
 
 # function to generate prompt for Gemini using user input from AddTripPage
-def generate_trip_recommendations(trip_name, city, preferences, num_days, max_retries=3):
+def generate_trip_recommendations(trip_name, city, country, preferences, num_days, max_retries=3):
     """
     Calls the Gemini API to generate a list of place recommendations.
     """
@@ -40,6 +43,16 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     if client is None:
         print("ERROR: AI Client is not initialized. Cannot generate recommendations.")
         return None
+    
+    google_map_tool_instruction = """
+    You have access to Google Maps.
+    - You MUST use the Google Maps tool to verify the real-world existence of every place.
+    - You MUST fetch the EXACT "latitude" and "longitude" from Google Maps for each place.
+    - Do NOT estimate or approximate coordinates; only use values returned by Google Maps.
+    - If a place CANNOT be verified on Google Maps or does NOT have an exact match:
+        - DISCARD that place immediately and choose another valid, verifiable place instead.
+    - EVERY place in your final plan must be fully verified using Google Maps.
+    """
     
     preference_descriptions = {
         "Eating and Drinking": 
@@ -58,6 +71,17 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
             "Relaxation & Wellness: prioritize spas, hot springs, beaches, saunas, wellness centers, tea houses.",
     }
 
+    Japan_special_instructions = """
+    SPECIAL RULE FOR JAPAN ADDRESSES:
+    Format the address using canonical Japanese address structure:
+    - Prefecture + City/Ward + District/Oaza + Chome + Block + House Number 
+      (e.g., 東京都江東区有明1-6-7).
+    - Use Kanji with numeric chome/block/house fields separated by hyphens.
+    - Do NOT include building names, floors, entrances, or extra descriptors.
+    - Kanji is preferred for highest Mapbox accuracy; Romaji is allowed but less reliable.
+    - The address must be a specific, complete, real address that Mapbox can validate.
+    """
+
     # Only include descriptions for preferences that the user selected
     selected_pref_text = "\n".join(
         f"• {preference_descriptions[p]}" 
@@ -67,6 +91,42 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
 
     if not selected_pref_text:
         selected_pref_text = "• No specific preferences provided. Choose balanced, popular activities."
+
+    output_format_instruction = """
+    [
+      {{
+        "day": 1,
+        "places": [
+          {{
+            "name": "Name of the place",
+            "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
+            "start_time": "HH:MM",
+            "end_time": "HH:MM",
+            "notes": "A brief note about this place (<= 200 characters)"
+          }}
+        ]
+      }}
+    ]
+    """
+
+    google_map_output_format_instruction = """
+    [
+      {{
+        "day": 1,
+        "places": [
+          {{
+            "name": "Name of the place",
+            "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
+            "latitude": 35.12345,
+            "longitude": 139.12345,
+            "start_time": "HH:MM",
+            "end_time": "HH:MM",
+            "notes": "A brief note about this place (<= 200 characters)"
+          }}
+        ]
+      }}
+    ]
+    """
 
     # construct the prompt
     prompt_contents = f"""
@@ -78,6 +138,8 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     User Travel Preferences: {', '.join(preferences) if preferences else "None"}
 
     IMPORTANT:
+    {google_map_tool_instruction if google_map_supported else ""}
+
     - Take the user's Travel Preferences into consideration **whenever they are provided**.
     - Preferences should meaningfully influence which places are selected.
     - Selected preference categories are:
@@ -103,6 +165,8 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     10. Do NOT invent vague or fictional venues — use well-known or plausible real places.
     11. The "notes" field must be a short description with a MAXIMUM of 200 characters.
 
+    {Japan_special_instructions if country.strip().lower() == "japan" else ""}
+
     ADDITIONAL PLANNING RULES:
     12. Consider **geographic distance** between consecutive places.
         - Prefer routes that minimize travel time.
@@ -119,21 +183,10 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     Do not include any other text or markdown formatting (like ```json).
     OUTPUT FORMAT (your output must match this exactly):
 
-    [
-      {{
-        "day": 1,
-        "places": [
-          {{
-            "name": "Name of the place",
-            "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
-            "start_time": "HH:MM",
-            "end_time": "HH:MM",
-            "notes": "A brief note about this place (<= 200 characters)"
-          }}
-        ]
-      }}
-    ]
+    {google_map_output_format_instruction if google_map_supported else output_format_instruction}
     """
+
+    tools = [types.Tool(google_maps=types.GoogleMaps())]
 
     delay = 1  # exponential backoff initial delay
 
@@ -142,10 +195,19 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
 
         # generate the AI response
         try:
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt_contents
-            )
+            if google_map_supported:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt_contents,
+                    config=types.GenerateContentConfig(
+                        tools=tools
+                    )
+                )
+            else:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt_contents
+                )
 
             # empty response check
             raw_text = (response.text or "").strip()
@@ -200,6 +262,7 @@ def create_trip_plan_from_ai(user, trip_data):
     recommendations = generate_trip_recommendations(
         trip_name=trip.name,
         city=trip.destination_city,
+        country=country,
         preferences=preferences,
         num_days=num_days,
     )
@@ -231,35 +294,68 @@ def create_trip_plan_from_ai(user, trip_data):
         for idx, place_data in enumerate(day_plan_places, start=1):
             print(f"  Processing place {idx}/{len(day_plan_places)}:")
 
+            google_provided_coordinates = False
+            latitude = place_data.get("latitude", None)
+            longitude = place_data.get("longitude", None)
             search_place_name = place_data.get("name", "")
-            print(f"    Searching for place '{search_place_name}' using place name...")
-            search_result = search_place(place_name=search_place_name, city=city, country=country)
-            if not search_result:
-                # Place not found in Mapbox, validate address
-                longitude, latitude = get_coordinate_from_address(place_data.get("address", ""))
-                if not longitude or not latitude:
-                    print(f"    [Skipped] place '{search_place_name}': not found in Mapbox.")
-                    continue
-                else:
-                    # search again using coordinates
-                    print(f"    Searching for place '{search_place_name}' again using coordinates...")
-                    search_result = search_place(coordinates=(longitude, latitude), city=city, country=country)
-                    if not search_result:
-                        # fallback: leave mapbox_id empty
-                        search_result = {
-                            "name": place_data.get("name", ""),
-                            "full_address": place_data.get("address", ""),
-                            "mapbox_supported": False,
-                        }
-                        print(f"    [Fallback] Using provided address for place '{search_place_name}'.")
+            search_place_address = place_data.get("address", "")
 
-            print(f"    Found place: {search_result['name']} at {search_result['full_address']} (mapbox_id={search_result.get('mapbox_id', 'None')})")
+            search_result = None
+
+            # First, try to search the place using google coordinates if available
+            if latitude is not None and longitude is not None:
+                google_provided_coordinates = True
+                print(f"    Searching for place '{search_place_name}' using Google coordinates '{longitude}, {latitude}'...")
+                search_result = search_place(
+                    place_name=search_place_name,
+                    place_address=search_place_address,
+                    city=city,
+                    country=country,
+                    coordinates=(longitude, latitude)
+                )
+            else:
+                print(f"    Searching for place '{search_place_name}' using place name...")
+                search_result = search_place(place_name=search_place_name, place_address=search_place_address, city=city, country=country)
+                if search_result:
+                    longitude = search_result.get("longitude", None)
+                    latitude = search_result.get("latitude", None)
+                else:
+                    # Place not found in Mapbox, validate address
+                    print(f"    Converting address '{search_place_address}' to get coordinates...")
+                    longitude, latitude = get_coordinate_from_address(search_place_address)
+                    if not longitude or not latitude:
+                        print(f"    [Skipped] place '{search_place_name}': not found in Mapbox.")
+                        continue
+                    else:
+                        # search again using coordinates
+                        print(f"    Searching for place '{search_place_name}' again using coordinates '{longitude}, {latitude}'...")
+                        search_result = search_place(place_name=search_place_name, place_address=search_place_address, city=city, country=country, coordinates=(longitude, latitude))
+
+            if not search_result:
+                # fallback: leave mapbox_id empty
+                search_result = {
+                    "name": search_place_name,
+                    "full_address": search_place_address,
+                    "mapbox_supported": False,
+                }
+                if google_map_supported and google_provided_coordinates:
+                    search_result["mapbox_supported"] = True
+                    precision = 2
+                    search_result["mapbox_id"] = f"google-map-coordinates-{round(longitude, precision)},{round(latitude, precision)}-address-{search_place_address}-name-{search_place_name}"
+                    print(f"    [Fallback] Using Google address info for place '{search_place_name}'.")
+                else:
+                    print(f"    [Fallback] Using provided address info for place '{search_place_name}'.")
+            else:
+                print(f"    [Found] place: {search_result['name']} at {search_result['full_address']})")
+
             # Prepare data for Place creation
             place_input_data = {
                 "name": search_result['name'],
                 "address": search_result['full_address'],
+                "longitude": longitude,
+                "latitude": latitude,
                 "raw_mapbox_id": search_result.get('mapbox_id', None),
-                "mapbox_supported": search_result.get("mapbox_supported", True),
+                "mapbox_supported": search_result.get("mapbox_supported", False),
                 "start_time": place_data.get("start_time", ""),
                 "end_time": place_data.get("end_time", ""),
                 "notes": place_data.get("notes", ""),

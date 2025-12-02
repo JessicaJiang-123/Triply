@@ -64,7 +64,10 @@ def create_place_for_day(data, day_obj):
     data["image_url"] = unsplash_url
 
     # Convert address to coordinates
-    longitude, latitude = get_coordinate_from_address(data.get("address", ""))
+    longitude = data.get("longitude", None)
+    latitude = data.get("latitude", None)
+    if not longitude or not latitude:
+        longitude, latitude = get_coordinate_from_address(data.get("address", ""))
     data["longitude"] = longitude
     data["latitude"] = latitude
     
@@ -127,7 +130,6 @@ def create_place_for_day(data, day_obj):
             mapbox_id=mapbox_id,
             defaults={
                 'raw_mapbox_id': raw_mapbox_id,
-                'name': place.name or '' # type: ignore
             }
         )
         place.shared_place = shared_place # type: ignore
@@ -239,7 +241,6 @@ def update_place_for_day(data, day_obj, place_id):
                 mapbox_id=new_mapbox_id,
                 defaults={
                     'raw_mapbox_id': new_raw_mapbox_id,
-                    'name': data.get('name', place.name) or ''
                 }
             )
             place.shared_place = shared_place # type: ignore
