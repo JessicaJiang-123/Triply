@@ -1,5 +1,6 @@
 import time
 import google.genai as genai
+from google.genai import types
 import configparser
 import os
 import json
@@ -77,7 +78,9 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
 
     User Travel Preferences: {', '.join(preferences) if preferences else "None"}
 
-    IMPORTANT:
+    IMPORTANT: You have access to Google Maps.
+    - You MUST use the Google Maps tool to verify the existence of each place and fetch its EXACT "latitude" and "longitude". 
+    - Do NOT estimate coordinates; use the real data from the tool.
     - Take the user's Travel Preferences into consideration **whenever they are provided**.
     - Preferences should meaningfully influence which places are selected.
     - Selected preference categories are:
@@ -126,6 +129,8 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
           {{
             "name": "Name of the place",
             "address": "Full address of the place (e.g., 123 Main St, City, State, Country)",
+            "latitude": 35.12345,
+            "longitude": 139.12345,
             "start_time": "HH:MM",
             "end_time": "HH:MM",
             "notes": "A brief note about this place (<= 200 characters)"
@@ -134,6 +139,8 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
       }}
     ]
     """
+
+    tools = [types.Tool(google_maps=types.GoogleMaps())]
 
     delay = 1  # exponential backoff initial delay
 
@@ -144,7 +151,10 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=prompt_contents
+                contents=prompt_contents,
+                config=types.GenerateContentConfig(
+                    tools=tools
+                )
             )
 
             # empty response check
@@ -231,35 +241,58 @@ def create_trip_plan_from_ai(user, trip_data):
         for idx, place_data in enumerate(day_plan_places, start=1):
             print(f"  Processing place {idx}/{len(day_plan_places)}:")
 
-            search_place_name = place_data.get("name", "")
-            print(f"    Searching for place '{search_place_name}' using place name...")
-            search_result = search_place(place_name=search_place_name, city=city, country=country)
-            if not search_result:
-                # Place not found in Mapbox, validate address
-                longitude, latitude = get_coordinate_from_address(place_data.get("address", ""))
-                if not longitude or not latitude:
-                    print(f"    [Skipped] place '{search_place_name}': not found in Mapbox.")
-                    continue
-                else:
-                    # search again using coordinates
-                    print(f"    Searching for place '{search_place_name}' again using coordinates...")
-                    search_result = search_place(coordinates=(longitude, latitude), city=city, country=country)
-                    if not search_result:
-                        # fallback: leave mapbox_id empty
-                        search_result = {
-                            "name": place_data.get("name", ""),
-                            "full_address": place_data.get("address", ""),
-                            "mapbox_supported": False,
-                        }
-                        print(f"    [Fallback] Using provided address for place '{search_place_name}'.")
+            lat = place_data.get("latitude")
+            lng = place_data.get("longitude")
+            name = place_data.get("name")
+            address = place_data.get("address")
 
-            print(f"    Found place: {search_result['name']} at {search_result['full_address']} (mapbox_id={search_result.get('mapbox_id', 'None')})")
+            search_result = {}
+
+            if lat and lng:
+                print(f"    [Success] Using Gemini-provided coordinates for '{name}'")
+                search_result = {
+                    "name": name,
+                    "full_address": address,
+                    "mapbox_id": None,
+                    "mapbox_supported": True
+                }
+            else:
+                print(f"    [Fallback] No coords from AI for '{name}', trying Mapbox search...")
+                
+                search_place_name = name
+                search_result = search_place(place_name=search_place_name, city=city, country=country)
+                
+                if not search_result:
+                    # Place not found in Mapbox, validate address
+                    longitude, latitude = get_coordinate_from_address(place_data.get("address", ""))
+                    if longitude and latitude:
+                         # search again using coordinates
+                        print(f"    Searching for place '{search_place_name}' again using coordinates...")
+                        search_result = search_place(coordinates=(longitude, latitude), city=city, country=country)
+                        lat = latitude
+                        lng = longitude
+
+                    if not search_result:
+                        if lat and lng:
+                             search_result = {
+                                "name": name,
+                                "full_address": address,
+                                "mapbox_supported": False,
+                            }
+                        else:
+                            print(f"    [Skipped] place '{search_place_name}': not found in Mapbox and no coords.")
+                            continue
+
+            print(f"    Found place: {search_result['name']} at {search_result['full_address']}")
+            
             # Prepare data for Place creation
             place_input_data = {
                 "name": search_result['name'],
                 "address": search_result['full_address'],
                 "raw_mapbox_id": search_result.get('mapbox_id', None),
                 "mapbox_supported": search_result.get("mapbox_supported", True),
+                "latitude": lat if lat else search_result.get("latitude"), 
+                "longitude": lng if lng else search_result.get("longitude"),
                 "start_time": place_data.get("start_time", ""),
                 "end_time": place_data.get("end_time", ""),
                 "notes": place_data.get("notes", ""),
