@@ -64,7 +64,10 @@ def create_place_for_day(data, day_obj):
     data["image_url"] = unsplash_url
 
     # Convert address to coordinates
-    longitude, latitude = get_coordinate_from_address(data.get("address", ""))
+    longitude = data.get("longitude", None)
+    latitude = data.get("latitude", None)
+    if not longitude or not latitude:
+        longitude, latitude = get_coordinate_from_address(data.get("address", ""))
     data["longitude"] = longitude
     data["latitude"] = latitude
     
