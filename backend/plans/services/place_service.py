@@ -64,9 +64,16 @@ def create_place_for_day(data, day_obj):
     data["image_url"] = unsplash_url
 
     # Convert address to coordinates
-    longitude, latitude = get_coordinate_from_address(data.get("address", ""))
-    data["longitude"] = longitude
-    data["latitude"] = latitude
+    # longitude, latitude = get_coordinate_from_address(data.get("address", ""))
+    # data["longitude"] = longitude
+    # data["latitude"] = latitude
+    if not data.get("latitude") or not data.get("longitude"):
+        print(f"    [PlaceService] Missing coordinates for '{data.get('name')}', fetching from address...")
+        longitude, latitude = get_coordinate_from_address(data.get("address", ""))
+        data["longitude"] = longitude
+        data["latitude"] = latitude
+    else:
+        print(f"    [PlaceService] Using provided coordinates for '{data.get('name')}'")
     
     serializer = PlaceSerializer(data=data)
     serializer.is_valid(raise_exception=True)
@@ -159,10 +166,20 @@ def update_place_for_day(data, day_obj, place_id):
         place.image_url = unsplash_url
 
     # if place name changed, update the coordinates
+    # if name_changed or address_changed:
+    #     longitude, latitude = get_coordinate_from_address(data.get("address", ""))
+    #     place.longitude = longitude
+    #     place.latitude = latitude
     if name_changed or address_changed:
-        longitude, latitude = get_coordinate_from_address(data.get("address", ""))
-        place.longitude = longitude
-        place.latitude = latitude
+        # Prioritize coordinates if provided in data (e.g. from future AI updates)
+        if data.get("latitude") and data.get("longitude"):
+            place.latitude = data["latitude"]
+            place.longitude = data["longitude"]
+        else:
+            # Fallback for manual edits: fetch from address
+            longitude, latitude = get_coordinate_from_address(data.get("address", ""))
+            place.longitude = longitude
+            place.latitude = latitude
 
     # update mutable fields
     for field in [
