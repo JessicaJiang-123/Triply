@@ -2,13 +2,19 @@ import requests
 from urllib.parse import quote
 import configparser
 import os
+from difflib import SequenceMatcher
 
 # Load API key from config.ini
 config_path = os.path.join(os.path.dirname(__file__), '../../', 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path)
 
-def search_place(place_name=None, coordinates=None, city=None, country=None):
+def compute_similarity(a: str, b: str) -> float:
+    if not a or not b:
+        return 0.0
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+def search_place(place_name, place_address, city, country, coordinates=None):
     """
     Search for a place using Mapbox Searchbox API.
     
@@ -20,26 +26,26 @@ def search_place(place_name=None, coordinates=None, city=None, country=None):
         { mapbox_id, name, full_address }
     or None if no valid result.
     """
-    if (not place_name and not coordinates) or not city or not country:
+    if not place_name or not place_address or not city or not country:
         return None
     
     mapbox_api_key = config.get('Mapbox', 'API_KEY', fallback=None)
     if not mapbox_api_key:
         print("Mapbox API key not found in config.ini")
         return None
-    
-    if place_name:
+        
+    if coordinates:
         params = {
-            "q": place_name,
+            "longitude": coordinates[0],
+            "latitude": coordinates[1],
             "access_token": mapbox_api_key,
             "types": "poi,address", # ensure POIs + address results
             "limit": 10,
             "language": "en"
         }
-    if coordinates:
+    else:
         params = {
-            "longitude": coordinates[0],
-            "latitude": coordinates[1],
+            "q": place_name,
             "access_token": mapbox_api_key,
             "types": "poi,address", # ensure POIs + address results
             "limit": 10,
@@ -50,7 +56,7 @@ def search_place(place_name=None, coordinates=None, city=None, country=None):
     url_reverse = "https://api.mapbox.com/search/searchbox/v1/reverse"
 
     try:
-        url = url_forward if place_name else url_reverse
+        url = url_reverse if coordinates else url_forward
         response = requests.get(url, params=params, timeout=6)
         response.raise_for_status()
 
@@ -63,7 +69,8 @@ def search_place(place_name=None, coordinates=None, city=None, country=None):
         city_lower = city.strip().lower()
         country_lower = country.strip().lower()
         
-        valid_results = []
+        best_entry = None
+        best_score = -1
         for feature in features:
             props = feature.get("properties", {})
             context = props.get("context", {})
@@ -83,22 +90,33 @@ def search_place(place_name=None, coordinates=None, city=None, country=None):
             if not city_match:
                 continue
 
-            valid_results.append(feature)
-            break
-        
-        if not valid_results:
-            # print(f"No valid results matching for place '{place_name}' in {city}, {country}.")
+            # Match found, compute similarity scores
+            name_mapbox = props.get("name") or props.get("name_preferred")
+            address_mapbox = props.get("full_address") or props.get("place_formatted")
+
+            name_sim = compute_similarity(place_name, name_mapbox) if name_mapbox else 0
+            addr_sim = compute_similarity(place_address, address_mapbox) if address_mapbox else 0
+
+            # Weighted score
+            total_score = round(0.3 * name_sim + 0.7 * addr_sim, 4)
+
+            # Track best match
+            if total_score > best_score:
+                best_score = total_score
+                best_entry = {
+                    "mapbox_id": props.get("mapbox_id"),
+                    "name": name_mapbox if name_sim > 0.8 else place_name,
+                    "full_address": address_mapbox,
+                    "name_similarity": round(name_sim, 4),
+                    "address_similarity": round(addr_sim, 4),
+                    "total_similarity": total_score,
+                }
+
+        print(f"name_similarity: {best_entry['name_similarity'] if best_entry else 'N/A'}, address_similarity: {best_entry['address_similarity'] if best_entry else 'N/A'}, total_similarity: {best_entry['total_similarity'] if best_entry else 'N/A'}")
+
+        if best_score < 0.55:
             return None
-
-        top_result = valid_results[0]
-        top_result_props = top_result.get("properties", {})
-
-        result = {
-            "mapbox_id": top_result_props.get("mapbox_id"),
-            "name": top_result_props.get("name") or top_result_props.get("name_preferred"),
-            "full_address": top_result_props.get("full_address") or top_result_props.get("place_formatted"),
-        }
-        return result
+        return best_entry
 
     except requests.RequestException as e:
         print(f"Error searching for place '{place_name}' in mapbox searchbox: {e}")
