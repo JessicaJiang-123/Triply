@@ -32,7 +32,7 @@ except (configparser.NoSectionError, configparser.NoOptionError) as e:
 
 
 # function to generate prompt for Gemini using user input from AddTripPage
-def generate_trip_recommendations(trip_name, city, preferences, num_days, max_retries=3):
+def generate_trip_recommendations(trip_name, city, country, preferences, num_days, max_retries=3):
     """
     Calls the Gemini API to generate a list of place recommendations.
     """
@@ -57,6 +57,17 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
         "Relaxation & Wellness":
             "Relaxation & Wellness: prioritize spas, hot springs, beaches, saunas, wellness centers, tea houses.",
     }
+
+    Japan_special_instructions = """
+    SPECIAL RULE FOR JAPAN ADDRESSES:
+    Format the address using canonical Japanese address structure:
+    - Prefecture + City/Ward + District/Oaza + Chome + Block + House Number 
+      (e.g., 東京都江東区有明1-6-7).
+    - Use Kanji with numeric chome/block/house fields separated by hyphens.
+    - Do NOT include building names, floors, entrances, or extra descriptors.
+    - Kanji is preferred for highest Mapbox accuracy; Romaji is allowed but less reliable.
+    - The address must be a specific, complete, real address that Mapbox can validate.
+    """
 
     # Only include descriptions for preferences that the user selected
     selected_pref_text = "\n".join(
@@ -102,6 +113,8 @@ def generate_trip_recommendations(trip_name, city, preferences, num_days, max_re
     9. Do NOT include descriptions inside the "name" field.
     10. Do NOT invent vague or fictional venues — use well-known or plausible real places.
     11. The "notes" field must be a short description with a MAXIMUM of 200 characters.
+
+    {Japan_special_instructions if country.strip().lower() == "japan" else ""}
 
     ADDITIONAL PLANNING RULES:
     12. Consider **geographic distance** between consecutive places.
@@ -200,6 +213,7 @@ def create_trip_plan_from_ai(user, trip_data):
     recommendations = generate_trip_recommendations(
         trip_name=trip.name,
         city=trip.destination_city,
+        country=country,
         preferences=preferences,
         num_days=num_days,
     )
@@ -232,18 +246,20 @@ def create_trip_plan_from_ai(user, trip_data):
             print(f"  Processing place {idx}/{len(day_plan_places)}:")
 
             search_place_name = place_data.get("name", "")
+            search_place_address = place_data.get("address", "")
             print(f"    Searching for place '{search_place_name}' using place name...")
-            search_result = search_place(place_name=search_place_name, city=city, country=country)
+            search_result = search_place(place_name=search_place_name, place_address=search_place_address, city=city, country=country)
             if not search_result:
                 # Place not found in Mapbox, validate address
+                print(f"    Search address '{place_data.get('address', '')}' to get coordinates...")
                 longitude, latitude = get_coordinate_from_address(place_data.get("address", ""))
                 if not longitude or not latitude:
                     print(f"    [Skipped] place '{search_place_name}': not found in Mapbox.")
                     continue
                 else:
                     # search again using coordinates
-                    print(f"    Searching for place '{search_place_name}' again using coordinates...")
-                    search_result = search_place(coordinates=(longitude, latitude), city=city, country=country)
+                    print(f"    Searching for place '{search_place_name}' again using coordinates '{longitude}, {latitude}'...")
+                    search_result = search_place(place_name=search_place_name, place_address=search_place_address, city=city, country=country, coordinates=(longitude, latitude))
                     if not search_result:
                         # fallback: leave mapbox_id empty
                         search_result = {
