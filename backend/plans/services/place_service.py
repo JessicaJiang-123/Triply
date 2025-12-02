@@ -127,7 +127,6 @@ def create_place_for_day(data, day_obj):
             mapbox_id=mapbox_id,
             defaults={
                 'raw_mapbox_id': raw_mapbox_id,
-                'name': place.name or '' # type: ignore
             }
         )
         place.shared_place = shared_place # type: ignore
@@ -239,7 +238,6 @@ def update_place_for_day(data, day_obj, place_id):
                 mapbox_id=new_mapbox_id,
                 defaults={
                     'raw_mapbox_id': new_raw_mapbox_id,
-                    'name': data.get('name', place.name) or ''
                 }
             )
             place.shared_place = shared_place # type: ignore

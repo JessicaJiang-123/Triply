@@ -53,11 +53,9 @@ class SharedPlace(models.Model):
     """
     mapbox_id = models.CharField(max_length=64, unique=True) # Hash of the raw mapbox_id
     raw_mapbox_id = models.TextField()
-    name = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return f"SharedPlace {self.name or self.mapbox_id}"
-
+        return f"SharedPlace Mapbox_id: {self.mapbox_id}"
 
 class Place(models.Model):
     day = models.ForeignKey(
