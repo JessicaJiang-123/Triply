@@ -115,10 +115,11 @@ export default function PlaceCard({
                 {/* Warning icon if mapbox_supported = false */}
                 {!mapbox_supported && (
                   <i
-                    className="bi bi-exclamation-triangle-fill text-warning ms-2"
+                    className="bi bi-exclamation-circle ms-2"
                     style={{
-                      fontSize: 16,
+                      fontSize: 12,
                       cursor: 'pointer',
+                      color: '#6c757d',
                       opacity: 0.8,
                     }}
                     title="This place is not supported or verified by the map system. Coordinates or routes may be inaccurate."
