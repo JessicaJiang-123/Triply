@@ -15,6 +15,8 @@ config_path = os.path.join(os.path.dirname(__file__), '../../', 'config.ini')
 config = configparser.ConfigParser()
 config.read(config_path)
 
+google_map_supported = config.getboolean('Gemini', 'GOOGLE_MAP_SUPPORTED', fallback=False)
+
 client = None
 try:
     api_key = config.get('Gemini', 'API_KEY')
@@ -42,7 +44,6 @@ def generate_trip_recommendations(trip_name, city, country, preferences, num_day
         print("ERROR: AI Client is not initialized. Cannot generate recommendations.")
         return None
     
-    google_map_supported = config.getboolean('Gemini', 'GOOGLE_MAP_SUPPORTED', fallback=False)
     google_map_tool_instruction = """
     You have access to Google Maps.
     - You MUST use the Google Maps tool to verify the real-world existence of every place.
@@ -293,6 +294,7 @@ def create_trip_plan_from_ai(user, trip_data):
         for idx, place_data in enumerate(day_plan_places, start=1):
             print(f"  Processing place {idx}/{len(day_plan_places)}:")
 
+            google_provided_coordinates = False
             latitude = place_data.get("latitude", None)
             longitude = place_data.get("longitude", None)
             search_place_name = place_data.get("name", "")
@@ -302,6 +304,7 @@ def create_trip_plan_from_ai(user, trip_data):
 
             # First, try to search the place using google coordinates if available
             if latitude is not None and longitude is not None:
+                google_provided_coordinates = True
                 print(f"    Searching for place '{search_place_name}' using Google coordinates '{longitude}, {latitude}'...")
                 search_result = search_place(
                     place_name=search_place_name,
@@ -335,7 +338,13 @@ def create_trip_plan_from_ai(user, trip_data):
                     "full_address": search_place_address,
                     "mapbox_supported": False,
                 }
-                print(f"    [Fallback] Using provided address info for place '{search_place_name}'.")
+                if google_map_supported and google_provided_coordinates:
+                    search_result["mapbox_supported"] = True
+                    precision = 2
+                    search_result["mapbox_id"] = f"google-map-coordinates-{round(longitude, precision)},{round(latitude, precision)}-address-{search_place_address}-name-{search_place_name}"
+                    print(f"    [Fallback] Using Google address info for place '{search_place_name}'.")
+                else:
+                    print(f"    [Fallback] Using provided address info for place '{search_place_name}'.")
             else:
                 print(f"    [Found] place: {search_result['name']} at {search_result['full_address']})")
 
