@@ -93,6 +93,7 @@ def search_place(place_name, place_address, city, country, coordinates=None):
             # Match found, compute similarity scores
             name_mapbox = props.get("name") or props.get("name_preferred")
             address_mapbox = props.get("full_address") or props.get("place_formatted")
+            mapbox_coordinates = feature.get("geometry", {}).get("coordinates", [])
 
             name_sim = compute_similarity(place_name, name_mapbox) if name_mapbox else 0
             addr_sim = compute_similarity(place_address, address_mapbox) if address_mapbox else 0
@@ -105,14 +106,17 @@ def search_place(place_name, place_address, city, country, coordinates=None):
                 best_score = total_score
                 best_entry = {
                     "mapbox_id": props.get("mapbox_id"),
+                    "mapbox_supported": True,
                     "name": name_mapbox if name_sim > 0.8 else place_name,
                     "full_address": address_mapbox,
+                    "longitude": mapbox_coordinates[0] if len(mapbox_coordinates) == 2 else None,
+                    "latitude": mapbox_coordinates[1] if len(mapbox_coordinates) == 2 else None,
                     "name_similarity": round(name_sim, 4),
                     "address_similarity": round(addr_sim, 4),
                     "total_similarity": total_score,
                 }
 
-        print(f"name_similarity: {best_entry['name_similarity'] if best_entry else 'N/A'}, address_similarity: {best_entry['address_similarity'] if best_entry else 'N/A'}, total_similarity: {best_entry['total_similarity'] if best_entry else 'N/A'}")
+        print(f"    name_similarity: {best_entry['name_similarity'] if best_entry else 'N/A'}\n    address_similarity: {best_entry['address_similarity'] if best_entry else 'N/A'}\n    total_similarity: {best_entry['total_similarity'] if best_entry else 'N/A'}")
 
         if best_score < 0.55:
             return None
