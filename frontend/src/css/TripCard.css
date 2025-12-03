@@ -1,0 +1,16 @@
+/* Hide button text on narrow screens */
+@media (max-width: 1030px) and (min-width: 768px), (max-width: 520px) {
+  .trip-btn-text {
+    display: none !important;
+  }
+
+  /* Remove icon margin when text is hidden */
+  .trip-btn i {
+    margin-right: 0 !important;
+  }
+
+  .trip-btn {
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
+  }
+}
