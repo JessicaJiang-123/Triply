@@ -39,7 +39,7 @@ export async function autoGenerateComments(trip_id: number) {
   if (!trip_id) return;
 
   try {
-    const res = await axiosInstance.get(
+    const res = await axiosInstance.post(
       `/api/plans/generate-ai-comments/${trip_id}/`
     );
     console.log('AI Comments generated:', res.data);
@@ -176,6 +176,6 @@ export async function autoGenerateComments(trip_id: number) {
       }
     }
   } catch (err) {
-    console.error('autoGenerateComments: Failed overall', err);
+    console.error('autoGenerateComments Failed: ', err);
   }
 }

@@ -418,7 +418,7 @@ class UploadCommentImageAPIView(APIView):
         return Response({'images': urls}, status=status.HTTP_201_CREATED)
     
 
-@api_view(["GET"])
+@api_view(["POST"])
 def generate_trip_comments_view(request, trip_id):
 
     comment_results, error_message = ai_comment_service.ai_auto_generate_comments(trip_id)
