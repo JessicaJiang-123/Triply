@@ -148,7 +148,10 @@ const TripCard: React.FC<TripCardProps> = ({
                   onClick={(e) => handleAIComments(e, id)}
                   className="trip-btn"
                 >
-                  <i className="bi bi-robot me-1" title="Generate AI comments"></i>
+                  <i
+                    className="bi bi-robot me-1"
+                    title="Generate AI comments"
+                  ></i>
                   <span className="trip-btn-text">
                     {aiLoading ? 'Generating…' : 'AI-Comments'}
                   </span>
