@@ -149,18 +149,21 @@ def ai_auto_generate_comments(trip_id, max_retries=3):
     places = Place.objects.filter(day__trip=trip).order_by("day__order", "order")
 
     if not places.exists():
-        return None, "This trip has no places"
+        return None, None
 
     # Prepare place_list for AI agent
     place_list = []
     for p in places:
-        place_list.append({
-            "mapbox_id": p.mapbox_id,
-            "name": p.name,
-            "address": p.address,
-            "notes": p.notes or "",
-        })
+        if p.mapbox_id:
+            place_list.append({
+                "mapbox_id": p.mapbox_id,
+                "name": p.name,
+                "address": p.address,
+                "notes": p.notes or "",
+            })
 
+    target_count = len(place_list)
+    print(f"[AI Commenter] Generating comments for {target_count} places.")
     validated_comments = []
 
     for attempt in range(1, max_retries + 1):
@@ -175,18 +178,22 @@ def ai_auto_generate_comments(trip_id, max_retries=3):
         print("AI-generated comments: ", json.dumps(comment_results, indent=2))
         print(f"[AI Commenter] Generated {len(comment_results)}/{len(place_list)} comments")
 
-        current_validated = []
+        current_validated_set = set()
         # Validate each comment has valid mapbox_id
         for comment in comment_results:
             if "mapbox_id" in comment:
                 # check if mapbox_id exists in place_list
                 if any(p["mapbox_id"] == comment["mapbox_id"] for p in place_list):
-                    current_validated.append(comment)
+                    validated_comments.append(comment)
+                    current_validated_set.add(comment["mapbox_id"])
 
-        validated_comments = current_validated
-        print(f"[AI Commenter] Validated {len(validated_comments)}/{len(place_list)} comments after mapbox_id check")
+        print(f"[AI Commenter] Validated {len(current_validated_set)}/{len(place_list)} comments after mapbox_id check")
 
-        if len(validated_comments) == len(place_list):
+        # Check if we have all comments validated
+        if len(validated_comments) == target_count:
             break
+
+        # Update place_list to only include places that still need comments
+        place_list = [p for p in place_list if p["mapbox_id"] not in current_validated_set]
 
     return validated_comments, None
