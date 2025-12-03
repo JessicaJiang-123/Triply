@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, permissions, status
+from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,7 +8,7 @@ from django.db import transaction
 from django.db.models import Q
 from rest_framework.decorators import action
 from django.contrib.auth.models import User
-from .services import ai_planner_service, place_service, trip_service
+from .services import ai_planner_service, place_service, trip_service, ai_comment_service
 from .models import Trip, Day, Place, PlaceComment, CommentImage, SharedPlace
 from .serializers import DaySerializer, TripSerializer, PlaceSerializer, PlaceCommentSerializer, CommentImageSerializer
 
@@ -415,3 +416,20 @@ class UploadCommentImageAPIView(APIView):
 
         # Return URLs only; no DB records created. Caller should pass these URLs as image_urls when creating the comment.
         return Response({'images': urls}, status=status.HTTP_201_CREATED)
+    
+
+@api_view(["GET"])
+def generate_trip_comments_view(request, trip_id):
+
+    comment_results, error_message = ai_comment_service.ai_auto_generate_comments(trip_id)
+
+    if not comment_results and error_message:
+        return Response(
+            {"detail": error_message},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    else:
+        return Response(
+            comment_results,
+            status=status.HTTP_200_OK
+        )
