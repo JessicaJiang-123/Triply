@@ -1,5 +1,5 @@
 import OAuthButton from './OAuthButton';
-import './HeroModal.css';
+import '../css/HeroModal.css';
 
 export default function HeroModal() {
   const DEBUG = import.meta.env.VITE_DEBUG === 'true';
