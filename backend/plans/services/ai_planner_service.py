@@ -4,6 +4,7 @@ from google.genai import types
 import configparser
 import os
 import json
+import re
 
 from ..serializers import PlaceSerializer
 from .place_service import create_place_for_day
@@ -164,23 +165,25 @@ def generate_trip_recommendations(trip_name, city, country, preferences, num_day
     9. Do NOT include descriptions inside the "name" field.
     10. Do NOT invent vague or fictional venues — use well-known or plausible real places.
     11. The "notes" field must be a short description with a MAXIMUM of 200 characters.
+    12. The "notes" field must NOT contain any bracketed numbers or artifacts such as "[0]", "[1]", "[2]", or similar. The notes must be natural language only, with no trailing metadata.
 
     {Japan_special_instructions if country.strip().lower() == "japan" else ""}
 
     ADDITIONAL PLANNING RULES:
-    12. Consider **geographic distance** between consecutive places.
+    13. Consider **geographic distance** between consecutive places.
         - Prefer routes that minimize travel time.
         - Avoid jumping back and forth across the city unnecessarily.
         - Group nearby attractions together on the same day.
-    13. Include **meal-friendly restaurant stops** when appropriate.
+    14. Include **meal-friendly restaurant stops** when appropriate.
         - Add lunch stop around **11:30-13:30**.
         - Add dinner stop around **17:30-19:30**.
         - Restaurants must be well-known, popular, and easy to find on Mapbox.
         - Do NOT invent fictional restaurants.
-    14. Restaurants must also follow all time rules (valid start/end, chronological ordering).
+    15. Restaurants must also follow all time rules (valid start/end, chronological ordering).
 
     Respond with ONLY a valid JSON array in the following format.
-    Do not include any other text or markdown formatting (like ```json).
+        - Do NOT include any other text or markdown formatting (like ```json).
+        - Do NOT include any trailing classification tokens, indexing artifacts, ranking labels, or bracketed numbers such as "[0]" or "[4]" anywhere in the output JSON. Only output natural language text.
     OUTPUT FORMAT (your output must match this exactly):
 
     {google_map_output_format_instruction if google_map_supported else output_format_instruction}
@@ -235,6 +238,10 @@ def generate_trip_recommendations(trip_name, city, country, preferences, num_day
             delay *= 2  # exponential backoff
 
     return None
+
+def _clean_note(note):
+    """Remove trailing bracketed numbers from notes."""
+    return re.sub(r'\[\d+\]\s*$', '', note).strip()
 
 def create_trip_plan_from_ai(user, trip_data):
     """
@@ -358,7 +365,7 @@ def create_trip_plan_from_ai(user, trip_data):
                 "mapbox_supported": search_result.get("mapbox_supported", False),
                 "start_time": place_data.get("start_time", ""),
                 "end_time": place_data.get("end_time", ""),
-                "notes": place_data.get("notes", ""),
+                "notes": _clean_note(place_data.get("notes", "")),
             }
 
             # validate place input data
