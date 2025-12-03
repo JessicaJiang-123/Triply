@@ -17,6 +17,7 @@ type PlanPlacesPanelProps = {
   selectedRouteId: string | null;
   setSelectedRouteId: Dispatch<SetStateAction<string | null>>;
   setSelectedMapboxId: Dispatch<SetStateAction<string | null>>;
+  setSelectedPlaceId: Dispatch<SetStateAction<number | null>>;
   handleShare: () => void;
 };
 
@@ -33,6 +34,7 @@ export default function PlanPlacesPanel({
   selectedRouteId,
   setSelectedRouteId,
   setSelectedMapboxId,
+  setSelectedPlaceId,
   handleShare,
 }: PlanPlacesPanelProps): ReactElement {
   const navigate = useNavigate();
@@ -142,6 +144,7 @@ export default function PlanPlacesPanel({
                 onPreviewComments={(mbid: string) => {
                   setSelectedRouteId(null);
                   setSelectedMapboxId(mbid);
+                  setSelectedPlaceId(p.id);
                 }}
                 onDelete={handleDeletePlace}
                 trip_id={trip.id}
@@ -153,6 +156,7 @@ export default function PlanPlacesPanel({
                 <div
                   onClick={() => {
                     setSelectedMapboxId(null);
+                    setSelectedPlaceId(null);
                     setSelectedRouteId((prev) =>
                       prev === routes[index].route_id
                         ? null

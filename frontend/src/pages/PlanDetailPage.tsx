@@ -19,6 +19,7 @@ export default function PlanDetailPage(): ReactElement {
   const [routes, setRoutes] = useState<RouteSegment[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [selectedMapboxId, setSelectedMapboxId] = useState<string | null>(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
   const [loadingTrip, setLoadingTrip] = useState(true);
   const [loadingPlaces, setLoadingPlaces] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export default function PlanDetailPage(): ReactElement {
         setSelectedDayId(Number(day_id));
         setSelectedRouteId(null);
         setSelectedMapboxId(null);
+        setSelectedPlaceId(null);
       } catch (err) {
         // console.error('Failed to fetch day places', err);
         if (axios.isAxiosError(err) && err.response) {
@@ -115,8 +117,9 @@ export default function PlanDetailPage(): ReactElement {
       });
 
       // If the deleted place was being viewed in the comment panel, close it
-      if (mapboxId && selectedMapboxId === mapboxId) {
+      if (mapboxId && selectedMapboxId === mapboxId && selectedPlaceId === placeId) {
         setSelectedMapboxId(null);
+        setSelectedPlaceId(null);
       }
     } catch (err) {
       // console.error('Delete place failed', err);
@@ -176,6 +179,7 @@ export default function PlanDetailPage(): ReactElement {
             }}
           >
             <PlanMapCommentPanel
+              selectedPlaceId={selectedPlaceId}
               selectedMapboxId={selectedMapboxId}
               setSelectedMapboxId={setSelectedMapboxId}
               places={places}
@@ -207,6 +211,7 @@ export default function PlanDetailPage(): ReactElement {
               selectedRouteId={selectedRouteId}
               setSelectedRouteId={setSelectedRouteId}
               setSelectedMapboxId={setSelectedMapboxId}
+              setSelectedPlaceId={setSelectedPlaceId}
               handleShare={handleShare}
             />
           </div>
@@ -242,6 +247,7 @@ export default function PlanDetailPage(): ReactElement {
               selectedRouteId={selectedRouteId}
               setSelectedRouteId={setSelectedRouteId}
               setSelectedMapboxId={setSelectedMapboxId}
+              setSelectedPlaceId={setSelectedPlaceId}
               handleShare={handleShare}
             />
           </div>
@@ -257,6 +263,7 @@ export default function PlanDetailPage(): ReactElement {
             }}
           >
             <PlanMapCommentPanel
+              selectedPlaceId={selectedPlaceId}
               selectedMapboxId={selectedMapboxId}
               setSelectedMapboxId={setSelectedMapboxId}
               places={places}
