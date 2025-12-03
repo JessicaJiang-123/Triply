@@ -4,6 +4,7 @@ from google.genai import types
 import configparser
 import os
 import json
+import re
 
 from ..serializers import PlaceSerializer
 from .place_service import create_place_for_day
@@ -238,6 +239,10 @@ def generate_trip_recommendations(trip_name, city, country, preferences, num_day
 
     return None
 
+def _clean_note(note):
+    """Remove trailing bracketed numbers from notes."""
+    return re.sub(r'\[\d+\]\s*$', '', note).strip()
+
 def create_trip_plan_from_ai(user, trip_data):
     """
     Create Trip, Days and create Place objects from AI-generated recommendations.
@@ -360,7 +365,7 @@ def create_trip_plan_from_ai(user, trip_data):
                 "mapbox_supported": search_result.get("mapbox_supported", False),
                 "start_time": place_data.get("start_time", ""),
                 "end_time": place_data.get("end_time", ""),
-                "notes": place_data.get("notes", ""),
+                "notes": _clean_note(place_data.get("notes", "")),
             }
 
             # validate place input data
