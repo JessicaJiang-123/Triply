@@ -35,5 +35,12 @@ urlpatterns = [
         'generate-ai-plan/',
         views.AIGeneratePlanView.as_view(), 
         name='generate-ai-plan'
-    ),
+     ),
+
+     # AI-generated comments for trip places
+     path(
+          'generate-ai-comments/<int:trip_id>/',
+          views.generate_trip_comments_view,
+          name='generate-ai-comments'
+     ),
 ]
