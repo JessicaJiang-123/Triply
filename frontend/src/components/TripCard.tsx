@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button, Row, Col } from 'react-bootstrap';
 import { autoGenerateComments } from '../utils/autoGenerateComments';
+import '../css/TripCard.css';
 
 interface TripCardProps {
   id: number;
@@ -145,24 +146,31 @@ const TripCard: React.FC<TripCardProps> = ({
                   size="sm"
                   disabled={aiLoading}
                   onClick={(e) => handleAIComments(e, id)}
+                  className="trip-btn"
                 >
-                  <i className="bi bi-robot me-1"></i>
-                  {aiLoading ? 'Generating…' : 'AI-Comments'}
+                  <i className="bi bi-robot me-1" title="Generate AI comments"></i>
+                  <span className="trip-btn-text">
+                    {aiLoading ? 'Generating…' : 'AI-Comments'}
+                  </span>
                 </Button>
 
                 <Button
                   variant="outline-primary"
                   size="sm"
                   onClick={handleShareClick}
+                  className="trip-btn"
                 >
-                  <i className="bi bi-share me-1"></i> Share
+                  <i className="bi bi-share me-1" title="Share this trip"></i>
+                  <span className="trip-btn-text">Share</span>
                 </Button>
                 <Button
                   variant="outline-danger"
                   size="sm"
                   onClick={handleDeleteClick}
+                  className="trip-btn"
                 >
-                  <i className="bi bi-trash me-1"></i> Delete
+                  <i className="bi bi-trash me-1" title="Delete this trip"></i>
+                  <span className="trip-btn-text">Delete</span>
                 </Button>
               </div>
             ) : (
