@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Row, Col } from 'react-bootstrap';
-import axiosInstance from '../api/axiosInstance';
+import { autoGenerateComments } from '../utils/autoGenerateComments';
 
 interface TripCardProps {
   id: number;
@@ -65,8 +65,8 @@ const TripCard: React.FC<TripCardProps> = ({
 
   const [aiLoading, setAiLoading] = useState(false);
 
-  // AI generated comments for this trip's places
-  async function fetchAIComments(e: React.MouseEvent, trip_id: number) {
+  // Handle AI Comments generation
+  async function handleAIComments(e: React.MouseEvent, trip_id: number) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -75,10 +75,7 @@ const TripCard: React.FC<TripCardProps> = ({
     setAiLoading(true);
 
     try {
-      const res = await axiosInstance.get(
-        `/api/plans/generate-ai-comments/${trip_id}/`
-      );
-      console.log('AI Comments generated:', res.data);
+      await autoGenerateComments(trip_id);
     } catch (err) {
       console.error('Failed to generate AI comments', err);
     } finally {
@@ -147,7 +144,7 @@ const TripCard: React.FC<TripCardProps> = ({
                   variant="outline-secondary"
                   size="sm"
                   disabled={aiLoading}
-                  onClick={(e) => fetchAIComments(e, id)}
+                  onClick={(e) => handleAIComments(e, id)}
                 >
                   <i className="bi bi-robot me-1"></i>
                   {aiLoading ? 'Generating…' : 'AI-Comments'}
